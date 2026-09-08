@@ -637,12 +637,17 @@ Unlock:
 
 ## 12.3 Unsafe Request Origin Validation
 
-- [ ] POST에서 Origin을 검증한다.
-- [ ] PUT에서 Origin을 검증한다.
-- [ ] PATCH에서 Origin을 검증한다.
-- [ ] DELETE에서 Origin을 검증한다.
+- [ ] 내부 API의 POST에서 Origin을 검증한다.
+- [ ] 내부 API의 PUT에서 Origin을 검증한다.
+- [ ] 내부 API의 PATCH에서 Origin을 검증한다.
+- [ ] 내부 API의 DELETE에서 Origin을 검증한다.
 - [ ] allowed origin은 `APP_ORIGIN` 기준이다.
-- [ ] malformed/foreign origin unsafe request를 거부한다.
+- [ ] 내부 API의 missing/null/malformed/foreign Origin unsafe request를 `403 FORBIDDEN`으로 거부한다.
+- [ ] login/signup, onboarding, API key 관리에도 내부 API Origin 정책을 적용한다.
+- [ ] Public API는 Origin 없는 유효한 API key의 GET/POST/PUT/DELETE 요청을 처리한다.
+- [ ] Public API는 session cookie만으로 접근하면 `401`을 반환한다.
+- [ ] Public API에 cookie와 API key가 함께 오면 API key 소유자로만 인증한다.
+- [ ] Public API의 Origin 검증 예외를 모든 origin에 대한 CORS 허용으로 구현하지 않는다.
 
 ---
 
@@ -1017,6 +1022,12 @@ Help:
 - [ ] `git diff`는 Working Tree vs Staging Area다.
 - [ ] `git diff --staged`는 Staging Area vs HEAD snapshot이다.
 - [ ] added/modified/deleted diff를 표현한다.
+- [ ] HEAD → stagingArea 적용 → workingTree 적용 순서로 전체 snapshot을 복원한다.
+- [ ] 각 변경분 배열의 path는 유일하며, 누락된 path는 기준 snapshot에서 상속한다.
+- [ ] 일부 파일만 stage/commit해도 기존의 다른 파일이 새 commit에 보존된다.
+- [ ] add 후 재편집한 파일을 commit하면 staged 내용이 저장되고 나머지 수정은 workingTree에 남는다.
+- [ ] 삭제를 stage하면 staged diff에 삭제가 나타나고 commit에서 해당 path만 제거된다.
+- [ ] untracked 파일은 add 전 일반 diff에서 제외되고 add 후 staged diff에 나타난다.
 
 ## 22.6 Branch / HEAD
 
@@ -1045,6 +1056,14 @@ Help:
 - [ ] `pull`이 fetch + integration semantics를 구현한다.
 - [ ] `push`가 virtual remote branch를 갱신한다.
 - [ ] remote-ahead / local-ahead 상태를 표현할 수 있다.
+- [ ] Branch seed와 새 branch에 upstream을 명시하며 기본값은 null이다.
+- [ ] `git push -u origin feature/login` 성공 후 해당 branch의 upstream이 저장된다.
+- [ ] 이후 인자 없는 push/pull은 저장된 upstream을 사용하고 branch 전환 후에도 설정이 유지된다.
+- [ ] 명시적 remote/branch push/pull은 `-u` 없는 경우 upstream을 변경하지 않는다.
+- [ ] upstream 없는 인자 없는 push/pull은 `NO_UPSTREAM`으로 실패한다.
+- [ ] remote/branch 누락과 non-fast-forward push 오류가 계약된 errorCode를 반환한다.
+- [ ] 실패한 push는 remote state와 upstream을 변경하지 않는다.
+- [ ] 인자 없는 fetch는 upstream remote 또는 origin을 사용한다.
 
 ## 22.9 Result / Error
 

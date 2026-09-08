@@ -720,11 +720,23 @@ cross-site 요청으로부터 보호되어야 한다.
 
 ```text
 SameSite=Lax
-unsafe method(POST/PUT/PATCH/DELETE)의 Origin 검증
+내부 API의 unsafe method(POST/PUT/PATCH/DELETE)에 Origin 검증
 42 OAuth state parameter 검증
 ```
 
 Production에서 허용 Origin은 `APP_ORIGIN` 하나로 제한한다.
+
+내부 API의 unsafe request는 Origin이 없거나, `null`이거나, malformed이거나,
+허용 origin과 다르면 `403 FORBIDDEN`으로 거부한다.
+이 규칙은 login/signup, onboarding, API key 관리 endpoint에도 적용한다.
+42 OAuth GET callback은 별도의 OAuth state 검증을 사용한다.
+
+`/api/v1/public/*`는 API key 전용 인증 경계다.
+이 경로에는 위 cookie CSRF용 Origin 검증을 적용하지 않는다.
+Origin이 없는 외부 프로그램의 요청도 유효한 `X-API-Key`가 있으면 처리한다.
+Session/onboarding cookie만으로는 Public API에 접근할 수 없으며,
+cookie와 API key가 함께 있더라도 소유자는 API key로만 결정한다.
+이 예외는 cross-origin browser 접근을 허용하는 CORS 설정을 의미하지 않는다.
 
 현재 초기 구현에서는 별도 CSRF token을 추가하지 않는다.
 보안 구조가 변경되어 cross-site cookie 사용이 필요해질 경우에만
@@ -1669,8 +1681,35 @@ export type RepositoryState = {
 export type Branch = {
   name: string;
   commitId: string | null;
+  upstream: {
+    remoteName: string;
+    branchName: string;
+  } | null;
 };
 ```
+
+`upstream`은 local branch별 추적 설정이다. Remote-tracking branch와는 별개다.
+새 local branch는 `upstream: null`로 생성하며, seed도 이 필드를 명시한다.
+추적이 설정된 seed는 해당 remote가 존재해야 한다.
+
+고정 remote command 규칙:
+
+- `git push -u <remote> <branch>`는 지정한 local branch를 같은 이름의 remote
+  branch로 push한다. 성공한 경우에만 해당 local branch의 upstream을 저장한다.
+- `git push <remote> <branch>`도 같은 대상으로 push하되 upstream을 변경하지 않는다.
+- 인자 없는 `git push`는 current branch의 upstream에 push한다.
+- 인자 없는 `git pull`은 current branch의 upstream을 fetch하고 해당 remote-tracking
+  commit을 current branch에 merge한다.
+- `git pull <remote> <branch>`는 지정한 remote branch를 current branch에 통합하며,
+  기존 upstream을 변경하지 않는다.
+- 인자 없는 `git fetch`는 current branch upstream의 remote, 없으면 `origin`을 사용한다.
+- 인자 없는 push/pull에서 upstream이 없으면 `NO_UPSTREAM`을 반환한다.
+  Remote가 없으면 `REMOTE_NOT_FOUND`, 필요한 local/remote branch가 없으면
+  `BRANCH_NOT_FOUND`를 반환한다. Push는 없는 remote branch를 생성할 수 있다.
+- Non-fast-forward push는 `NON_FAST_FORWARD`로 거부하며 upstream도 변경하지 않는다.
+  위 형식 밖의 refspec/option은 지원을 명시하지 않은 한 `INVALID_ARGUMENT`로 거부한다.
+
+Branch 전환은 각 branch의 upstream을 보존한다. 이름만으로 upstream을 추측하지 않는다.
 
 ---
 
@@ -1732,6 +1771,56 @@ export type StagedFileState = {
   content: string;
   status: StagedFileStatus;
 };
+```
+
+---
+
+### Snapshot Reconstruction / Mutation Rules
+
+`stagingArea`와 `workingTree`는 전체 파일 목록이 아닌 **변경분 배열**이다.
+각 배열 안에서 `path`는 유일하며, 없는 항목은 파일 삭제를 의미하지 않는다.
+
+전체 snapshot은 다음 순서로 복원한다.
+
+```text
+H = HEAD commit snapshot (unborn HEAD이면 {})
+I = H에 stagingArea 변경분을 적용한 전체 index snapshot
+W = I에 workingTree 변경분을 적용한 전체 working snapshot
+```
+
+- `stagingArea`에 없는 path는 H의 내용을 상속한다.
+- `workingTree`에 없는 path는 I의 내용을 상속한다.
+- `deleted`는 path 제거를 뜻하며 `content`는 빈 문자열로 고정하고 복원 시 무시한다.
+- 그 외 상태는 `content`를 해당 path의 전체 파일 내용으로 적용한다.
+- Staged `added`/`modified`는 H 대비 상태다. `resolved`는 merge conflict를
+  해결하고 stage한 파일이며, snapshot 적용 방식은 added/modified와 같다.
+- Working `untracked`는 I에 없는 파일, `modified`는 I와 내용이 다른 파일이다.
+  `conflicted`는 아직 해결되지 않은 merge 파일을 나타낸다.
+
+Mutation은 복원된 snapshot을 기준으로 처리한 뒤 변경분을 다시 계산한다.
+
+- `git add <path>`는 현재 W의 해당 파일 내용 또는 삭제를 I에 반영한다.
+  W의 실제 내용은 유지하며, stagingArea는 H 대비, workingTree는 새 I 대비로 재계산한다.
+- Stage 후 파일을 다시 편집하면 staged 내용은 유지하고 workingTree에 새 변경분을 만든다.
+- Commit은 I 전체를 snapshot으로 저장하므로 stage하지 않은 기존 파일도 보존한다.
+  새 HEAD 기준으로 stagingArea를 비우고, 기존 W와 새 HEAD의 차이를 workingTree로 유지한다.
+- 해결되지 않은 conflict가 있으면 commit을 거부한다. 해결 표시는 mergeState와
+  함께 관리하며 snapshot 재계산만으로 conflict가 해결된 것으로 간주하지 않는다.
+- UI의 파일 편집, 삭제, conflict 해결도 같은 복원 규칙을 사용하는 simulator domain
+  function을 거친다.
+
+필수 예시:
+
+```text
+HEAD: a.txt=A0, b.txt=B0
+working edit: a.txt=A1
+git add a.txt
+working edit: a.txt=A2
+git commit -m "update a"
+
+new HEAD: a.txt=A1, b.txt=B0
+stagingArea: []
+workingTree: a.txt=A2 (modified)
 ```
 
 ---
@@ -1969,6 +2058,11 @@ export type FileDiff = {
 ```
 
 Simulator output string은 해당 diff structure를 사람이 읽을 수 있는 terminal output으로 변환한다.
+
+Section 10.6의 전체 snapshot을 복원해 비교한다. 변경분 배열끼리 직접 비교하지 않는다.
+`git diff`는 I를 before, W를 after로 사용하며 untracked 파일은 제외한다.
+`git diff --staged`는 H를 before, I를 after로 사용한다.
+새 파일은 add 전에는 status에서 untracked로 보이고, add 후에는 staged diff에 나타난다.
 
 ---
 
@@ -3493,6 +3587,9 @@ GET key list에는 revoked record가 남으며 UI는 `Active` / `Revoked` 상태
 ---
 
 ## 27.5 Public API Authentication
+
+Section 3.11의 API key 전용 경계를 따른다. Session cookie를 인증 fallback으로
+사용하지 않으며, Origin이 없다는 이유로 유효한 API key 요청을 거부하지 않는다.
 
 Public API request:
 

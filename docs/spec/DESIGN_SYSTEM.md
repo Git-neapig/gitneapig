@@ -1178,6 +1178,42 @@ Header가 Terminal workspace를 지나치게 축소시키지 않도록 높이는
 
 ---
 
+### Navbar Brand Identity
+
+The navbar brand consists of two separate elements:
+
+```text
+[Guinea Pig Mascot Icon] GitneaPig
+```
+
+The mascot icon reference asset is:
+
+```text
+docs/references/mascots/logo/navbar-mascot.png
+```
+
+The product name is rendered as actual UI text and must **NOT** be embedded inside the image asset.
+
+Wordmark styling:
+
+- `Gitnea` → light/white text
+- `Pig` → primary orange accent
+- display the full name exactly as `GitneaPig`
+- icon and wordmark appear together in the navbar as one brand area
+- clicking the brand area navigates to Home
+
+The mascot asset itself must not contain:
+
+- text
+- letters
+- product name
+- wordmark
+
+The logo image and the `GitneaPig` wordmark must remain separate implementation elements.
+
+---
+
+
 ## 12.2 AppFooter
 
 항상:
@@ -1680,6 +1716,7 @@ Language selector와 auth action을 접근 불가능한 secondary menu 깊숙이
 
 # 17. Home Page Visual Rules
 
+
 ## 17.1 Hero
 
 첫 viewport의 대부분을 Hero가 차지한다.
@@ -1688,20 +1725,175 @@ Desktop:
 
 ```text
 Left  → headline / description / CTA
-Right → Git visual / terminal / mascot
+Right → animated Git terminal + primary hero mascot
 ```
 
-두 영역은 겹치지 않는다.
+Left content와 Right visual 영역은 서로 침범하지 않는다.
 
-Hero right visual은 단순 큰 mascot 하나보다:
+Right visual은 GitneaPig가 어떤 서비스인지 첫 화면만 보고도 이해할 수 있도록
+**Git command가 실행되는 Terminal과 대표 Guinea Pig mascot을 하나의 composition으로 구성한다.**
+
+### Home Hero Terminal
+
+Terminal은 실제 사용자가 입력하는 interactive terminal이 아니라
+Home Hero를 위한 **decorative scripted animation**이다.
+
+화면에서는 Git 명령어가 실제 terminal에 입력되는 것처럼 순차적으로 표시된다.
+
+예시 sequence:
 
 ```text
-Git graph
-Terminal snippet
-Mascot
+$ git status
+On branch main
+
+$ git switch -c feature/navbar
+Switched to a new branch 'feature/navbar'
+
+$ git add src/components/Navbar.tsx
+
+$ git commit -m "feat: add navbar"
+[feature/navbar c4a71d2] feat: add navbar
+ 1 file changed, 42 insertions(+)
+
+$ git push -u origin feature/navbar
+Branch 'feature/navbar' set up to track 'origin/feature/navbar'.
 ```
 
-을 조합한 developer-learning scene을 사용한다.
+Animation flow:
+
+```text
+command characters appear progressively
+        ↓
+command completes
+        ↓
+output appears
+        ↓
+short pause
+        ↓
+next command begins
+```
+
+A blinking terminal cursor may be used while a command is being typed.
+
+The animation may restart after the final command and a short pause.
+
+This Hero animation does NOT use the interactive Git Simulator engine.
+It is a lightweight presentation animation only.
+
+Terminal rules:
+
+- Terminal dimensions remain stable during the animation.
+- New output must not increase the overall Home page height.
+- Terminal content stays inside its own visual area.
+- Commands and outputs must remain readable.
+- Do not add fake buttons or interactions that imply the Hero terminal is interactive.
+- Do not display random or meaningless code.
+- Use realistic Git command/output formatting.
+- The terminal must remain visually secondary to the overall Home message.
+- `prefers-reduced-motion` must disable the typing/loop animation and display a static completed terminal state instead.
+
+### Home Hero Mascot
+
+The Home Hero uses one dedicated primary mascot illustration.
+
+Asset:
+
+```text
+docs/references/mascots/hero/home-hero.png
+```
+
+The Hero mascot is intentionally more detailed and visually rich than:
+
+```text
+navbar mascot
+profile avatar
+Learn / Quest dialogue character
+```
+
+The primary Hero mascot uses the GitneaPig representative
+**white + warm orange guinea pig** design.
+
+The mascot is positioned around the **bottom-right side of the Terminal composition**.
+
+The Terminal and mascot may partially overlap so they visually read as one composition.
+
+However:
+
+- the mascot must not be placed as a tiny decoration inside the Terminal
+- the mascot must remain clearly visible
+- most of the mascot silhouette should remain visible
+- the mascot must not cover important Git commands or output
+- the mascot must be significantly larger than navbar/profile mascot assets
+
+Desktop visual target:
+
+```text
+Terminal → dominant rectangular visual
+Mascot   → approximately 30–40% of the Terminal width
+```
+
+For example, if the Terminal is approximately 650px wide,
+the Hero mascot may be roughly 200–260px wide depending on the illustration proportions.
+
+The exact pixel size is responsive and must not be hard-coded solely from these example values.
+
+Preferred composition:
+
+```text
+┌────────────────────────────────────┐
+│ ● ● ●                  terminal    │
+│                                    │
+│ $ git status                       │
+│ On branch main                     │
+│                                    │
+│ $ git switch -c feature/navbar     │
+│ Switched to a new branch...        │
+│                                    │
+│ $ git add ...                      │
+│ $ git commit ...                   │
+│ $ git push ...                     │
+└───────────────────────────────┐
+                                │
+                         [ LARGE HERO
+                           GUINEA PIG ]
+```
+
+The goal is:
+
+```text
+Terminal + Mascot
+→ one memorable developer-themed Hero composition
+```
+
+not:
+
+```text
+Terminal
++
+tiny mascot decoration
+```
+
+### Responsive Behavior
+
+Desktop:
+
+```text
+Left content | Terminal + large mascot
+```
+
+Tablet:
+
+- preserve the Terminal + mascot relationship when space allows
+- reduce both proportionally
+- prevent the mascot from covering Terminal text
+
+Mobile:
+
+- stack the Hero content vertically
+- Terminal may appear below the headline/CTA
+- mascot may move below or partially overlap the Terminal edge
+- do not preserve a desktop overlap if it causes clipping or unreadable content
+- the Hero must not create horizontal page scrolling
 
 ---
 
@@ -2783,21 +2975,34 @@ Friendly error
 
 ---
 
+
 ## 35.3 Size
 
-Hero:
+Mascot size depends on its product role.
 
 ```text
-large
+Navbar logo
+→ very small
+
+Profile avatar
+→ small
+
+Learn / Quest / Daily dialogue character
+→ small / medium
+
+Home Hero mascot
+→ large
 ```
 
-Workspace feedback:
+The Home Hero mascot is the largest and most visually detailed mascot treatment in the product.
 
-```text
-small/medium
-```
+It may partially overlap the Home Hero Terminal as defined in Section 17.1,
+but it must not significantly cover Terminal content.
 
-Terminal 바로 위에 거대한 mascot을 반복 표시하지 않는다.
+Workspace pages must not reuse the large Home Hero treatment.
+
+Large mascot artwork must not reduce the usable Terminal, Git Graph, Repo State,
+objective, or learning-content area.
 
 ---
 

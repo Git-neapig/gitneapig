@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AvatarSource {
+  DEFAULT
+  PRESET
+  CUSTOM
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+enum BookmarkTargetType {
+  LESSON
+  QUEST
+  COMMAND
+}
+
+model User {
+  id                        String   @id @default(uuid()) @db.Uuid
+  email                     String?  @db.VarChar(254)
+  normalizedEmail           String?  @unique @db.VarChar(254)
+  passwordHash              String?
+  oauth42Subject            String?  @unique
+  nickname                  String   @db.VarChar(20)
+  normalizedNickname        String   @unique @db.VarChar(20)
+  avatarSource              AvatarSource @default(DEFAULT)
+  avatarPresetKey           String?
+  avatarPath                String?
+  language                  String   @default("ko") @db.VarChar(2)
+  xp                        Int      @default(0)
+  streak                    Int      @default(0)
+  streakLastActivityDateKey  String?  @db.VarChar(10)
+  lastActiveAt              DateTime @default(now()) @db.Timestamptz(3)
+  createdAt                 DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime @updatedAt @db.Timestamptz(3)
+  lessonProgress            LessonProgress[]
+  questProgress             QuestProgress[]
+  dailyProgress             DailyChallengeProgress[]
+  achievements              UserAchievement[]
+  bookmarks                 Bookmark[]
+  apiKeys                   ApiKey[]
+  friendshipsLow            Friendship[] @relation("FriendshipLow")
+  friendshipsHigh           Friendship[] @relation("FriendshipHigh")
+  friendshipRequests        Friendship[] @relation("FriendshipRequester")
+}
+
+model Lesson {
+  id               String @id
+  slug             String @unique
+  order            Int    @unique
+  content          Json   @db.JsonB
+  guestAccessible  Boolean
+  xpReward         Int
+  progress         LessonProgress[]
+}
+
+model LessonProgress {
+  userId                    String @db.Uuid
+  lessonId                  String
+  highestReachedStageIndex  Int @default(0)
+  completedAt               DateTime? @db.Timestamptz(3)
+  xpAwarded                 Boolean @default(false)
+  user                      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson                    Lesson @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  @@id([userId, lessonId])
+}
+
+model Quest {
+  id        String @id
+  slug      String @unique
+  order     Int @unique
+  content   Json @db.JsonB
+  xpReward  Int
+  progress  QuestProgress[]
+}
+
+model QuestProgress {
+  userId       String @db.Uuid
+  questId      String
+  completedAt  DateTime? @db.Timestamptz(3)
+  xpAwarded    Boolean @default(false)
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quest        Quest @relation(fields: [questId], references: [id], onDelete: Restrict)
+  @@id([userId, questId])
+}
+
+model DailyChallengeTemplate {
+  id           String @id @default(uuid()) @db.Uuid
+  templateKey  String @unique
+  content      Json @db.JsonB
+  xpReward     Int @default(80)
+  active       Boolean @default(true)
+}
+
+model DailyChallenge {
+  id        String @id @default(uuid()) @db.Uuid
+  dateKey   String @unique @db.VarChar(10)
+  content   Json @db.JsonB
+  xpReward  Int @default(80)
+  progress  DailyChallengeProgress[]
+  @@unique([id, dateKey])
+}
+
+model DailyChallengeProgress {
+  userId       String @db.Uuid
+  challengeId  String @db.Uuid
+  dateKey      String @db.VarChar(10)
+  completedAt  DateTime @default(now()) @db.Timestamptz(3)
+  xpAwarded    Boolean @default(false)
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge    DailyChallenge @relation(fields: [challengeId, dateKey], references: [id, dateKey], onDelete: Restrict)
+  @@id([userId, challengeId, dateKey])
+  @@unique([userId, dateKey])
+}
+
+model Achievement {
+  id        String @id
+  key       String @unique
+  category  String
+  content   Json @db.JsonB
+  rule      Json @db.JsonB
+  xpReward  Int
+  iconKey   String
+  users     UserAchievement[]
+}
+
+model UserAchievement {
+  userId         String @db.Uuid
+  achievementId  String
+  unlockedAt     DateTime @default(now()) @db.Timestamptz(3)
+  xpAwarded      Boolean @default(false)
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement    Achievement @relation(fields: [achievementId], references: [id], onDelete: Restrict)
+  @@id([userId, achievementId])
+}
+
+model Bookmark {
+  id          String @id @default(uuid()) @db.Uuid
+  userId      String @db.Uuid
+  targetType  BookmarkTargetType
+  targetId    String
+  stage       String @default("")
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, targetType, targetId, stage])
+  @@index([userId, createdAt])
+}
+
+model Friendship {
+  id           String @id @default(uuid()) @db.Uuid
+  userLowId    String @db.Uuid
+  userHighId   String @db.Uuid
+  requesterId  String @db.Uuid
+  status       FriendshipStatus @default(PENDING)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+  userLow      User @relation("FriendshipLow", fields: [userLowId], references: [id], onDelete: Cascade)
+  userHigh     User @relation("FriendshipHigh", fields: [userHighId], references: [id], onDelete: Cascade)
+  requester    User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  @@unique([userLowId, userHighId])
+  @@index([userHighId, status])
+}
+
+model ApiKey {
+  id         String @id @default(uuid()) @db.Uuid
+  userId     String @db.Uuid
+  keyHash    String @unique @db.Char(64)
+  label      String @db.VarChar(80)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
+}
+
+model CommandReference {
+  id                  String @id
+  key                 String @unique
+  difficulty          String
+  whenToUse           Json @db.JsonB
+  examples            Json @db.JsonB
+  commonMistakes      Json @db.JsonB
+  relatedCommandKeys  Json @db.JsonB
+  relatedLessonIds    Json @db.JsonB
+  relatedQuestIds     Json @db.JsonB
+}

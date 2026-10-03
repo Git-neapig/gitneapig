@@ -1,5 +1,7 @@
 # GitneaPig — DESIGN_SYSTEM.md
 
+> 2026-09-10 승인 변경: [UI/UX 개정 명세](UI_UX_REVISION_2026-09-10.md)의 화면·탐색·스크롤·메뉴 규칙이 충돌하는 기존 항목보다 우선한다. 미확인 Figma 화면을 임의로 추정하지 않는다.
+
 > 이 문서는 GitneaPig의 **시각 언어, UI primitive, reusable component, responsive layout, interaction state, accessibility, Terminal/Git Graph 표현 규칙**을 정의한다.
 >
 > `MASTER_SPEC.md`가 무엇을 보여주고 어떻게 동작하는지를 정의하고,

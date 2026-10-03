@@ -1,8 +1,28 @@
-import { useId, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type SelectHTMLAttributes } from "react";
-import { Eye, EyeOff, Search, X, LoaderCircle } from "lucide-react";
-
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type HTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+} from "react";
+import {
+  Eye,
+  EyeOff,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  LoaderCircle,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 import "./ui.css";
 
+type Tone =
+  "neutral" | "primary" | "success" | "warning" | "danger" | "info" | "locked";
 export function Button({
   variant = "secondary",
   size = "md",
@@ -140,5 +160,294 @@ export function Select({
         {children}
       </select>
     </div>
+  );
+}
+export function Card({
+  variant = "default",
+  className = "",
+  ...props
+}: HTMLAttributes<HTMLDivElement> & {
+  variant?: "default" | "interactive" | "selected" | "locked" | "success";
+}) {
+  return <div {...props} className={`card card-${variant} ${className}`} />;
+}
+export function Badge({
+  tone = "neutral",
+  children,
+}: {
+  tone?: Tone;
+  children: ReactNode;
+}) {
+  return <span className={`badge tone-${tone}`}>{children}</span>;
+}
+export function Tabs({
+  label,
+  items,
+  value,
+  onChange,
+}: {
+  label: string;
+  items: { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  return (
+    <div role="tablist" aria-label={label} className="tabs">
+      {items.map((item, i) => (
+        <button
+          key={item.value}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+          type="button"
+          role="tab"
+          aria-selected={value === item.value}
+          tabIndex={value === item.value ? 0 : -1}
+          onClick={() => onChange(item.value)}
+          onKeyDown={(e) => {
+            let next = i;
+            if (e.key === "ArrowRight") next = (i + 1) % items.length;
+            else if (e.key === "ArrowLeft")
+              next = (i - 1 + items.length) % items.length;
+            else if (e.key === "Home") next = 0;
+            else if (e.key === "End") next = items.length - 1;
+            else return;
+            e.preventDefault();
+            onChange(items[next].value);
+            refs.current[next]?.focus();
+          }}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+export function ProgressBar({
+  value,
+  label,
+}: {
+  value: number;
+  label: string;
+}) {
+  const bounded = Math.min(100, Math.max(0, value));
+  return (
+    <div
+      className="progress"
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={bounded}
+    >
+      <span style={{ width: `${bounded}%` }} />
+    </div>
+  );
+}
+export function Dialog({
+  open,
+  title,
+  onClose,
+  closeLabel,
+  children,
+}: {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  closeLabel: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  useEffect(() => {
+    const el = ref.current;
+    if (!open || !el) return;
+    const trigger = document.activeElement as HTMLElement | null;
+    el.showModal();
+    return () => {
+      el.close();
+      trigger?.focus();
+    };
+  }, [open]);
+  return (
+    <dialog
+      ref={ref}
+      aria-labelledby={titleId}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          const r = e.currentTarget.getBoundingClientRect();
+          if (
+            e.clientX < r.left ||
+            e.clientX > r.right ||
+            e.clientY < r.top ||
+            e.clientY > r.bottom
+          )
+            onClose();
+        }
+      }}
+    >
+      <div className="dialog-heading">
+        <h2 id={titleId}>{title}</h2>
+        <IconButton label={closeLabel} onClick={onClose}>
+          <X size={20} />
+        </IconButton>
+      </div>
+      {children}
+    </dialog>
+  );
+}
+export function Tooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <span className="tooltip" tabIndex={0} aria-label={label}>
+      {children}
+      <span role="tooltip">{label}</span>
+    </span>
+  );
+}
+export function Alert({
+  tone = "info",
+  children,
+}: {
+  tone?: Tone;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      role={tone === "danger" ? "alert" : "status"}
+      className={`alert tone-${tone}`}
+    >
+      {children}
+    </div>
+  );
+}
+export function EmptyState({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="empty-state">
+      <h2>{title}</h2>
+      {description ? <p className="muted">{description}</p> : null}
+      {children}
+    </div>
+  );
+}
+export function Skeleton({ label }: { label: string }) {
+  return (
+    <div aria-label={label} role="status" className="skeleton">
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
+export function Breadcrumb({
+  items,
+}: {
+  items: { label: string; to?: string }[];
+}) {
+  return (
+    <nav aria-label="Breadcrumb" className="breadcrumb">
+      {items.map((item, i) => (
+        <span key={i}>
+          {i ? " / " : ""}
+          {item.to ? (
+            <Link to={item.to}>{item.label}</Link>
+          ) : (
+            <span aria-current="page">{item.label}</span>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+}
+export function Pagination({
+  page,
+  pages,
+  onChange,
+  previousLabel,
+  nextLabel,
+}: {
+  page: number;
+  pages: number;
+  onChange: (page: number) => void;
+  previousLabel: string;
+  nextLabel: string;
+}) {
+  return (
+    <nav className="pagination">
+      <IconButton
+        label={previousLabel}
+        disabled={page <= 1}
+        onClick={() => onChange(page - 1)}
+      >
+        <ChevronLeft size={18} />
+      </IconButton>
+      <span>
+        {page} / {Math.max(1, pages)}
+      </span>
+      <IconButton
+        label={nextLabel}
+        disabled={page >= pages}
+        onClick={() => onChange(page + 1)}
+      >
+        <ChevronRight size={18} />
+      </IconButton>
+    </nav>
+  );
+}
+export const defaultAvatar = "/mascots/characters/primary/avatar-white.png";
+export function Avatar({
+  src = defaultAvatar,
+  alt,
+  size = "md",
+}: {
+  src?: string;
+  alt: string;
+  size?: "sm" | "md" | "lg" | "xl";
+}) {
+  return (
+    <img
+      src={src.replace(
+        /^(\/mascots\/characters\/(?:primary|cream|grey-white|orange-black))\/avatar\.png$/,
+        "$1/avatar-white.png",
+      )}
+      alt={alt}
+      className={`avatar avatar-${size}`}
+      onError={(e) => {
+        if (!e.currentTarget.src.endsWith(defaultAvatar))
+          e.currentTarget.src = defaultAvatar;
+      }}
+    />
+  );
+}
+export function StatusDot({
+  online,
+  label,
+}: {
+  online: boolean;
+  label: string;
+}) {
+  return (
+    <span className="status">
+      <i className={online ? "online" : ""} aria-hidden />
+      {label}
+    </span>
   );
 }

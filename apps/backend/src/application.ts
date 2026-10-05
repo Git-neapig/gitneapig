@@ -12,6 +12,7 @@ import { PrismaService } from "./database/prisma.service";
 import { ApiExceptionFilter } from "./common/errors";
 import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
+import { SessionGuard } from "./auth/session.guard";
 
 export function originAllowed(
   method: string,
@@ -46,6 +47,7 @@ export class ApplicationModule {
         { provide: "CONFIG", useValue: config },
         PrismaService,
         AuthService,
+        SessionGuard,
       ],
     };
   }

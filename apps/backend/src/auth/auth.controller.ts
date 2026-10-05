@@ -1,7 +1,7 @@
-import { Body, Controller, HttpCode, Post, Res } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Post, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import type { Response } from "express";
-import { AuthService } from "./auth.service";
+import type { Request, Response } from "express";
+import { AuthService, currentUser } from "./auth.service";
 @ApiTags("Authentication")
 @Controller("api/v1/auth")
 export class AuthController {
@@ -17,5 +17,13 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     return this.auth.login(body, response);
+  }
+  @Get("me") async me(@Req() request: Request) {
+    return { user: currentUser(await this.auth.requiredUser(request)) };
+  }
+  @Post("logout") @HttpCode(204) logout(
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    this.auth.logout(response);
   }
 }

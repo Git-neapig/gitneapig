@@ -3,7 +3,8 @@ import { Prisma, type User } from "@prisma/client";
 import { calculateLevel, type CurrentUser, type Language, type PublicUserSummary } from "@gitneapig/shared";
 import { hash, verify, argon2id } from "argon2";
 import jwt from "jsonwebtoken";
-import type { Response } from "express";
+import type { Request, Response } from "express";
+import { z } from "zod";
 import type { Configuration } from "../config";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
@@ -92,6 +93,29 @@ export class AuthService {
       this.signed({ sub: user.id }, "session", 8 * 3600),
       this.cookieOptions(8 * 3600 * 1000),
     );
+  }
+  logout(response: Response): void {
+    response.clearCookie("gitneapig_session", this.cookieOptions());
+    response.clearCookie("gitneapig_onboarding", this.cookieOptions());
+  }
+  async user(request: Request, optional = false): Promise<User | null> {
+    const token = (request.cookies as Record<string, unknown> | undefined)
+      ?.gitneapig_session;
+    if (!token && optional) return null;
+    const payload = this.verified(token, "session");
+    if (!z.uuid().safeParse(payload.sub).success)
+      throw new ApiError(401, "UNAUTHORIZED", "Sign in to continue.");
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+    if (!user) throw new ApiError(401, "UNAUTHORIZED", "Sign in to continue.");
+    return this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastActiveAt: new Date() },
+    });
+  }
+  async requiredUser(request: Request): Promise<User> {
+    return (await this.user(request))!;
   }
   private identityError(error: unknown): never {
     if (

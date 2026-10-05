@@ -10,6 +10,8 @@ import { resolve } from "node:path";
 import type { Configuration } from "./config";
 import { PrismaService } from "./database/prisma.service";
 import { ApiExceptionFilter } from "./common/errors";
+import { AuthController } from "./auth/auth.controller";
+import { AuthService } from "./auth/auth.service";
 
 export function originAllowed(
   method: string,
@@ -38,10 +40,12 @@ export class ApplicationModule {
       module: ApplicationModule,
       controllers: [
         HealthController,
+        AuthController,
       ],
       providers: [
         { provide: "CONFIG", useValue: config },
         PrismaService,
+        AuthService,
       ],
     };
   }

@@ -1,0 +1,208 @@
+.auth-page {
+  max-width: 420px;
+  margin: 24px auto 48px;
+}
+.auth-page h1 {
+  font-size: 28px;
+  line-height: 36px;
+  text-align: center;
+}
+.auth-mascot {
+  display: block;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  color: var(--color-text-subtle);
+  font-size: 13px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  background: var(--color-border);
+  flex: 1;
+}
+.auth-switch {
+  text-align: center;
+  margin: 24px 0;
+}
+.policy-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.avatar-picker {
+  border: 0;
+  padding: 0;
+  display: flex;
+  gap: 16px;
+  margin: 0;
+}
+.avatar-picker legend {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.avatar-picker label {
+  position: relative;
+  cursor: pointer;
+}
+.avatar-picker input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+.avatar-picker label:has(input:checked) img {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+.avatar-picker label:has(input:focus-visible) {
+  outline: 2px solid var(--color-text);
+  outline-offset: 7px;
+  border-radius: 50%;
+}
+.checkbox {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.checkbox input {
+  accent-color: var(--color-primary);
+}
+.profile-heading {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin: 20px 0 32px;
+}
+.profile-heading > div {
+  min-width: 0;
+  flex: 1;
+  max-width: 440px;
+}
+.profile-heading h1 {
+  margin-bottom: 8px;
+}
+.profile-heading p {
+  margin-bottom: 12px;
+}
+.profile-heading > .button {
+  margin-left: auto;
+}
+.account-navigation {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  margin-bottom: 32px;
+}
+.account-navigation a {
+  white-space: nowrap;
+  padding: 10px 0;
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid transparent;
+}
+.account-navigation a.active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  border-bottom: 1px solid var(--color-border);
+  padding: 12px 0 32px;
+  margin-bottom: 36px;
+}
+.stat-strip > div {
+  display: grid;
+  gap: 12px;
+}
+.stat-strip strong {
+  font-size: 28px;
+  line-height: 36px;
+}
+.profile-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 48px;
+}
+.profile-columns h2,
+.activity-section h2 {
+  font-size: 22px;
+  line-height: 30px;
+}
+.progress-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+.progress-row .progress {
+  grid-column: 1/-1;
+}
+.achievement-row {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+}
+.achievement-row svg {
+  flex-shrink: 0;
+}
+.achievement-row p {
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+.activity-section {
+  margin-top: 32px;
+}
+.activity-list {
+  list-style: none;
+  padding: 0;
+}
+.activity-list li {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+}
+.activity-list a {
+  flex: 1;
+}
+.settings-form {
+  max-width: 560px;
+}
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.achievement-grid .card > svg {
+  display: block;
+  margin-bottom: 18px;
+}
+.achievement-grid h2 {
+  font-size: 20px;
+  line-height: 28px;
+  margin: 18px 0 10px;
+}
+.achievement-grid p {
+  font-size: 14px;
+  min-height: 48px;
+}

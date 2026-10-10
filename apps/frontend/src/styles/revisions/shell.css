@@ -1,0 +1,26 @@
+.account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 8px;
+}
+.account-menu-items {
+  top: 100%;
+  margin-top: 0;
+}
+.account-menu-items::before {
+  content: "";
+  position: absolute;
+  inset: -8px 0 auto;
+  height: 8px;
+}
+.account-menu-items a {
+  overflow-wrap: anywhere;
+}
+.brand img,
+.avatar {
+  background: #fff;
+}

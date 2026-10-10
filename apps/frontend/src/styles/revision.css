@@ -1,0 +1,19 @@
+@import "./revisions/shell.css";
+.hero-mascot {
+  width: 52%;
+  right: -14px;
+  bottom: 0;
+}
+@media (max-width: 900px) {
+  .hero-mascot {
+    width: 42%;
+    right: 0;
+    bottom: 0;
+  }
+}
+@media (max-width: 640px) {
+  .hero-mascot {
+    width: 48%;
+    bottom: 0;
+  }
+}

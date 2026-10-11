@@ -4,6 +4,7 @@ export type Difficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export * from "./simulator";
 export * from "./content";
 export * from "./api";
+export * from "./commands/registry";
 export type LevelProgress = {
   level: number;
   currentLevelXp: number;

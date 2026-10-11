@@ -3,4 +3,6 @@ export type {
   SimulatorResult,
   SimulatorCondition,
 } from "@gitneapig/shared";
+export * from "./parser";
 export * from "./state";
+export * from "./engine";

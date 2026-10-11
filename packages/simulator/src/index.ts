@@ -5,3 +5,4 @@ export type {
 } from "@gitneapig/shared";
 export * from "./parser";
 export * from "./state";
+export * from "./engine";

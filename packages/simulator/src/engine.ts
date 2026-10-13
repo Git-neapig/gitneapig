@@ -1,11 +1,80 @@
 import { commandRegistry, type RepositoryState, type SimulatorEvent, type SimulatorResult } from "@gitneapig/shared";
 import { CommandError, fail, parseCommand } from "./parser";
-import { ancestors, copyState, getDiff, has, rebuildChanges, snapshots } from "./state";
-import { createCommit } from "./merge";
+import { ancestors, commitSnapshot, copyState, diffSnapshots, getDiff, has, isAncestor, rebuildChanges, snapshots } from "./state";
+import { createCommit, merge } from "./merge";
+
+function validateBranch(name: string): void {
+  if (
+    !name ||
+    name === "HEAD" ||
+    name.startsWith("-") ||
+    name.startsWith("/") ||
+    name.endsWith("/") ||
+    name.endsWith(".") ||
+    name.includes("..") ||
+    name.includes("@{") ||
+    /[\s~^:?*[\\]/.test(name) ||
+    [...name].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127) ||
+    name.split("/").some((p) => !p || p.startsWith(".") || p.endsWith(".lock"))
+  )
+    fail("INVALID_ARGUMENT", "Invalid branch name.");
+}
 function branch(state: RepositoryState, name = state.currentBranch) {
   const found = state.branches.find((b) => b.name === name);
   if (!found) fail("BRANCH_NOT_FOUND", `Branch '${name}' does not exist.`);
   return found;
+}
+function switchBranch(
+  state: RepositoryState,
+  name: string,
+  create: boolean,
+  events: SimulatorEvent[],
+): string {
+  if (state.mergeState)
+    fail("MERGE_IN_PROGRESS", "Resolve and commit the current merge first.");
+  validateBranch(name);
+  if (create) {
+    if (state.branches.some((b) => b.name === name))
+      fail("BRANCH_ALREADY_EXISTS", `Branch '${name}' already exists.`);
+    state.branches.push({ name, commitId: state.headCommitId, upstream: null });
+    events.push({ type: "BRANCH_CREATED", branchName: name });
+  }
+  const target = branch(state, name),
+    { head, index, working } = snapshots(state),
+    targetSnapshot = commitSnapshot(state, target.commitId);
+  const dirty = new Set(
+    [...state.workingTree, ...state.stagingArea].map((f) => f.path),
+  );
+  if (diffSnapshots(head, targetSnapshot).some((f) => dirty.has(f.path)))
+    fail(
+      "INVALID_STATE",
+      "Switch would overwrite local changes. Commit them first.",
+    );
+  const nextIndex = { ...targetSnapshot },
+    nextWorking = { ...targetSnapshot };
+  for (const path of dirty) {
+    if (has(index, path))
+      Object.defineProperty(nextIndex, path, {
+        value: index[path],
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    else delete nextIndex[path];
+    if (has(working, path))
+      Object.defineProperty(nextWorking, path, {
+        value: working[path],
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    else delete nextWorking[path];
+  }
+  state.currentBranch = name;
+  state.headCommitId = target.commitId;
+  rebuildChanges(state, nextIndex, nextWorking);
+  events.push({ type: "BRANCH_SWITCHED", branchName: name });
+  return `Switched to ${create ? "a new " : ""}branch '${name}'.`;
 }
 export function executeCommand(
   input: RepositoryState,
@@ -127,6 +196,61 @@ export function executeCommand(
           )
           .join("\n");
         break;
+      case "branch": {
+        if (!args.length) {
+          output = state.branches
+            .map(
+              (b) => `${b.name === state.currentBranch ? "*" : " "} ${b.name}`,
+            )
+            .join("\n");
+          break;
+        }
+        const name = args[0];
+        validateBranch(name);
+        if (options["-d"]) {
+          const target = branch(state, name);
+          if (
+            name === state.currentBranch ||
+            state.mergeState?.sourceBranch === name
+          )
+            fail("INVALID_ARGUMENT", "Cannot delete an active branch.");
+          if (!isAncestor(state.commits, target.commitId, state.headCommitId))
+            fail("INVALID_STATE", "Branch is not fully merged.");
+          state.branches = state.branches.filter((b) => b.name !== name);
+          output = `Deleted branch ${name}.`;
+        } else {
+          if (state.branches.some((b) => b.name === name))
+            fail("BRANCH_ALREADY_EXISTS", `Branch '${name}' already exists.`);
+          state.branches.push({
+            name,
+            commitId: state.headCommitId,
+            upstream: null,
+          });
+          events.push({ type: "BRANCH_CREATED", branchName: name });
+          output = `Created branch ${name}.`;
+        }
+        break;
+      }
+      case "switch":
+      case "checkout":
+        output = switchBranch(
+          state,
+          args[0],
+          !!(options["-c"] || options["-b"]),
+          events,
+        );
+        break;
+      case "merge": {
+        const source =
+          state.branches.find((b) => b.name === args[0]) ??
+          state.remoteTrackingBranches.find(
+            (b) => `${b.remoteName}/${b.branchName}` === args[0],
+          );
+        if (!source)
+          fail("BRANCH_NOT_FOUND", `Branch '${args[0]}' does not exist.`);
+        ({ output, conflict } = merge(state, args[0], source.commitId, events));
+        break;
+      }
     }
     events.push({ type: "COMMAND_EXECUTED", commandKey: key });
     return {

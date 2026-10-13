@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { RepositoryState } from "@gitneapig/shared";
-import { createRepository, evaluateConditions, executeCommand, getDiff, modifyWorkingFile, parseCommand, resolveConflict, snapshots } from "./index";
+import {
+  applyRemoteCommit,
+  createRepository,
+  evaluateConditions,
+  executeCommand,
+  getDiff,
+  modifyWorkingFile,
+  parseCommand,
+  resolveConflict,
+  snapshots,
+} from "./index";
 
 const run = (state: RepositoryState, command: string) => {
   const result = executeCommand(state, command);
@@ -77,6 +87,12 @@ describe("parser and failure isolation", () => {
     expect(state).toEqual(before);
     expect(result.events).toEqual([]);
   });
+  it.each(["help", "git help", "git --help"])(
+    "has registry-backed help: %s",
+    (command) => {
+      expect(executeCommand(base(), command).output).toContain("git push");
+    },
+  );
   it("is deterministic including IDs and does not mutate frozen input", () => {
     const state = run(
       modifyWorkingFile(base(), "README.md", "new"),
@@ -254,5 +270,73 @@ describe("branches and merge", () => {
     expect(
       run(run(state, "git merge feature"), "git branch -d feature").branches,
     ).toHaveLength(1);
+  });
+});
+describe("real remote state and upstream", () => {
+  it("fetch changes local object database/tracking but not HEAD, index, or files", () => {
+    let state = applyRemoteCommit(base(), {
+      remoteName: "origin",
+      branchName: "main",
+      message: "Remote work",
+      snapshot: { "README.md": "remote" },
+    });
+    expect(state.commits).toHaveLength(1);
+    const files = snapshots(state);
+    state = run(state, "git fetch");
+    expect(state.headCommitId).toBe("c1");
+    expect(snapshots(state)).toEqual(files);
+    expect(state.remoteTrackingBranches[0].commitId).toBe("c2");
+    state = run(state, "git pull");
+    expect(state.headCommitId).toBe("c2");
+    expect(snapshots(state).head).toEqual({ "README.md": "remote" });
+  });
+  it("rejects stale push without altering remote and allows push after integration", () => {
+    let state = applyRemoteCommit(base(), {
+      remoteName: "origin",
+      branchName: "main",
+      message: "Remote work",
+      snapshot: { ...snapshots(base()).head, "remote.txt": "remote" },
+    });
+    state = save(state, "local.txt", "local");
+    expect(state.headCommitId).toBe("c3");
+    const rejected = executeCommand(state, "git push");
+    expect(rejected.errorCode).toBe("NON_FAST_FORWARD");
+    expect(rejected.nextState).toEqual(state);
+    state = run(run(state, "git pull"), "git push");
+    expect(state.remotes[0].branches[0].commitId).toBe(state.headCommitId);
+    expect(
+      evaluateConditions(state, [
+        { type: "REMOTE_SYNCED", remoteName: "origin", branchName: "main" },
+      ]),
+    ).toBe(true);
+  });
+  it("only successful push -u establishes upstream", () => {
+    let state = run(base(), "git switch -c feature");
+    state = save(state, "f.txt", "f");
+    expect(executeCommand(state, "git push").errorCode).toBe("NO_UPSTREAM");
+    expect(executeCommand(state, "git pull").errorCode).toBe("NO_UPSTREAM");
+    expect(
+      executeCommand(state, "git push -u missing feature").nextState.branches[1]
+        .upstream,
+    ).toBe(null);
+    state = run(state, "git push origin feature");
+    expect(state.branches[1].upstream).toBe(null);
+    state = run(state, "git push -u origin feature");
+    expect(state.branches[1].upstream).toEqual({
+      remoteName: "origin",
+      branchName: "feature",
+    });
+    expect(run(state, "git push").headCommitId).toBe(state.headCommitId);
+  });
+  it("uses explicit remote targets and rejects missing remote branches", () => {
+    expect(executeCommand(base(), "git pull origin missing").errorCode).toBe(
+      "BRANCH_NOT_FOUND",
+    );
+    expect(executeCommand(base(), "git fetch nowhere").errorCode).toBe(
+      "REMOTE_NOT_FOUND",
+    );
+    expect(executeCommand(base(), "git push origin missing").errorCode).toBe(
+      "BRANCH_NOT_FOUND",
+    );
   });
 });

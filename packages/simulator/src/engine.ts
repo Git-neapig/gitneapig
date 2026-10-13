@@ -1,7 +1,22 @@
-import { commandRegistry, type RepositoryState, type SimulatorEvent, type SimulatorResult } from "@gitneapig/shared";
+import {
+  commandRegistry,
+  type RepositoryState,
+  type SimulatorEvent,
+  type SimulatorResult,
+} from "@gitneapig/shared";
 import { CommandError, fail, parseCommand } from "./parser";
-import { ancestors, commitSnapshot, copyState, diffSnapshots, getDiff, has, isAncestor, rebuildChanges, snapshots } from "./state";
-import { createCommit, merge } from "./merge";
+import {
+  ancestors,
+  commitSnapshot,
+  copyState,
+  diffSnapshots,
+  getDiff,
+  has,
+  isAncestor,
+  rebuildChanges,
+  snapshots,
+} from "./state";
+import { createCommit, merge, requireClean } from "./merge";
 
 function validateBranch(name: string): void {
   if (
@@ -75,6 +90,39 @@ function switchBranch(
   rebuildChanges(state, nextIndex, nextWorking);
   events.push({ type: "BRANCH_SWITCHED", branchName: name });
   return `Switched to ${create ? "a new " : ""}branch '${name}'.`;
+}
+function fetchRemote(
+  state: RepositoryState,
+  name: string,
+  events: SimulatorEvent[],
+): string {
+  const remote = state.remotes.find((r) => r.name === name);
+  if (!remote) fail("REMOTE_NOT_FOUND", `Remote '${name}' does not exist.`);
+  if (state.mergeState?.sourceBranch.startsWith(`${name}/`))
+    fail(
+      "MERGE_IN_PROGRESS",
+      "Finish the current remote merge before fetching again.",
+    );
+  for (const commit of remote.commits) {
+    const existing = state.commits.find((c) => c.id === commit.id);
+    if (existing && JSON.stringify(existing) !== JSON.stringify(commit))
+      fail("INVALID_STATE", "Commit identity collision.");
+    if (!existing) state.commits.push(structuredClone(commit));
+  }
+  for (const ref of remote.branches) {
+    const tracking = state.remoteTrackingBranches.find(
+      (b) => b.remoteName === name && b.branchName === ref.name,
+    );
+    if (tracking) tracking.commitId = ref.commitId;
+    else
+      state.remoteTrackingBranches.push({
+        remoteName: name,
+        branchName: ref.name,
+        commitId: ref.commitId,
+      });
+  }
+  events.push({ type: "REMOTE_FETCHED", remoteName: name });
+  return `From ${name}\n${remote.branches.map((b) => `  ${b.commitId ?? "(unborn)"} ${name}/${b.name}`).join("\n")}`;
 }
 export function executeCommand(
   input: RepositoryState,
@@ -249,6 +297,84 @@ export function executeCommand(
         if (!source)
           fail("BRANCH_NOT_FOUND", `Branch '${args[0]}' does not exist.`);
         ({ output, conflict } = merge(state, args[0], source.commitId, events));
+        break;
+      }
+      case "fetch":
+        output = fetchRemote(
+          state,
+          args[0] ?? branch(state).upstream?.remoteName ?? "origin",
+          events,
+        );
+        break;
+      case "pull":
+      case "push": {
+        const upstream = branch(state).upstream;
+        if (!args.length && !upstream)
+          fail(
+            "NO_UPSTREAM",
+            "No upstream configured. Use git push -u <remote> <branch> or an explicit remote and branch.",
+          );
+        const remoteName = args[0] ?? upstream!.remoteName,
+          branchName = args[1] ?? upstream!.branchName;
+        const remote = state.remotes.find((r) => r.name === remoteName);
+        if (!remote)
+          fail("REMOTE_NOT_FOUND", `Remote '${remoteName}' does not exist.`);
+        const remoteBranch = remote.branches.find((b) => b.name === branchName);
+        if (key === "pull") {
+          requireClean(state);
+          if (!remoteBranch)
+            fail(
+              "BRANCH_NOT_FOUND",
+              `Remote branch '${branchName}' does not exist.`,
+            );
+          const fetched = fetchRemote(state, remoteName, events);
+          ({ output, conflict } = merge(
+            state,
+            `${remoteName}/${branchName}`,
+            remoteBranch.commitId,
+            events,
+          ));
+          output = `${fetched}\n${output}`;
+          if (!conflict)
+            events.push({ type: "REMOTE_PULLED", remoteName, branchName });
+        } else {
+          const local = args.length ? branch(state, branchName) : branch(state);
+          if (!local.commitId) fail("INVALID_STATE", "No commits to push.");
+          if (
+            remoteBranch?.commitId &&
+            !isAncestor(state.commits, remoteBranch.commitId, local.commitId)
+          )
+            fail(
+              "NON_FAST_FORWARD",
+              "Rejected: remote contains commits absent from this branch. Fetch and integrate first.",
+            );
+          const reachable = ancestors(state.commits, local.commitId);
+          for (const commit of state.commits)
+            if (
+              reachable.has(commit.id) &&
+              !remote.commits.some((c) => c.id === commit.id)
+            )
+              remote.commits.push(structuredClone(commit));
+          if (remoteBranch) remoteBranch.commitId = local.commitId;
+          else
+            remote.branches.push({
+              name: branchName,
+              commitId: local.commitId,
+            });
+          const tracking = state.remoteTrackingBranches.find(
+            (b) => b.remoteName === remoteName && b.branchName === branchName,
+          );
+          if (tracking) tracking.commitId = local.commitId;
+          else
+            state.remoteTrackingBranches.push({
+              remoteName,
+              branchName,
+              commitId: local.commitId,
+            });
+          if (options["-u"]) local.upstream = { remoteName, branchName };
+          events.push({ type: "REMOTE_PUSHED", remoteName, branchName });
+          output = `To ${remoteName}\n  ${local.name} -> ${branchName}`;
+        }
         break;
       }
     }

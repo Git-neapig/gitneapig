@@ -16,7 +16,7 @@ const examples: Record<CommandKey, string> = {
   push: "git push -u origin feature/login",
 };
 export const commandRegistry: readonly CommandCoreDefinition[] = [
-{
+  {
     key: "status",
     name: "git status",
     category: "INSPECT",
@@ -28,7 +28,7 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
     ),
     simulatorSupported: true,
   },
-{
+  {
     key: "add",
     name: "git add",
     category: "STAGE",
@@ -40,7 +40,7 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
     ),
     simulatorSupported: true,
   },
-{
+  {
     key: "commit",
     name: "git commit",
     category: "COMMIT",
@@ -52,7 +52,7 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
     ),
     simulatorSupported: true,
   },
-{
+  {
     key: "log",
     name: "git log",
     category: "INSPECT",
@@ -64,7 +64,7 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
     ),
     simulatorSupported: true,
   },
-{
+  {
     key: "diff",
     name: "git diff",
     category: "INSPECT",
@@ -76,7 +76,7 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
     ),
     simulatorSupported: true,
   },
-{
+  {
     key: "branch",
     name: "git branch",
     category: "BRANCH",
@@ -88,7 +88,7 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
     ),
     simulatorSupported: true,
   },
-{
+  {
     key: "switch",
     name: "git switch",
     category: "BRANCH",
@@ -100,7 +100,7 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
     ),
     simulatorSupported: true,
   },
-{
+  {
     key: "checkout",
     name: "git checkout",
     category: "BRANCH",
@@ -112,7 +112,7 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
     ),
     simulatorSupported: true,
   },
-{
+  {
     key: "merge",
     name: "git merge",
     category: "MERGE",
@@ -123,7 +123,47 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
       "別のブランチの履歴を現在のブランチに統合します。",
     ),
     simulatorSupported: true,
-  }
+  },
+  {
+    key: "fetch",
+    name: "git fetch",
+    category: "REMOTE",
+    syntax: ["git fetch", "git fetch <remote>"],
+    shortDescription: text(
+      "원격 이력을 가져와 추적 브랜치를 갱신합니다.",
+      "Download remote history and update tracking branches.",
+      "リモート履歴を取得し追跡ブランチを更新します。",
+    ),
+    simulatorSupported: true,
+  },
+  {
+    key: "pull",
+    name: "git pull",
+    category: "REMOTE",
+    syntax: ["git pull", "git pull <remote> <branch>"],
+    shortDescription: text(
+      "원격 이력을 가져와 현재 브랜치에 통합합니다.",
+      "Fetch remote history and merge it into the current branch.",
+      "リモート履歴を取得し現在のブランチに統合します。",
+    ),
+    simulatorSupported: true,
+  },
+  {
+    key: "push",
+    name: "git push",
+    category: "REMOTE",
+    syntax: [
+      "git push",
+      "git push <remote> <branch>",
+      "git push -u <remote> <branch>",
+    ],
+    shortDescription: text(
+      "로컬 커밋을 원격 브랜치에 공유합니다.",
+      "Publish local commits to a remote branch.",
+      "ローカルコミットをリモートブランチに共有します。",
+    ),
+    simulatorSupported: true,
+  },
 ].map((item) => ({
   ...item,
   shortExample: {

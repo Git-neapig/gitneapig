@@ -1,4 +1,12 @@
-import type { Commit, FileDiff, RepositoryState, SimulatorCondition, StagedFileState, WorkingFileState } from "@gitneapig/shared";
+import type {
+  Commit,
+  FileDiff,
+  RemoteCommitSpec,
+  RepositoryState,
+  SimulatorCondition,
+  StagedFileState,
+  WorkingFileState,
+} from "@gitneapig/shared";
 import { fail } from "./parser";
 export type Snapshot = Record<string, string>;
 export const copyState = (state: RepositoryState): RepositoryState =>
@@ -222,6 +230,30 @@ export function setHead(state: RepositoryState, id: string | null): void {
   if (!branch) fail("INVALID_STATE", "Current branch is missing.");
   branch.commitId = id;
   state.headCommitId = id;
+}
+export function applyRemoteCommit(
+  state: RepositoryState,
+  spec: RemoteCommitSpec,
+): RepositoryState {
+  const next = copyState(state),
+    remote = next.remotes.find((r) => r.name === spec.remoteName);
+  if (!remote)
+    fail("REMOTE_NOT_FOUND", `Remote ${spec.remoteName} does not exist.`);
+  const branch = remote.branches.find((b) => b.name === spec.branchName);
+  if (!branch)
+    fail(
+      "BRANCH_NOT_FOUND",
+      `Remote branch ${spec.branchName} does not exist.`,
+    );
+  const commit = allocateCommit(
+    next,
+    spec.message,
+    branch.commitId ? [branch.commitId] : [],
+    spec.snapshot,
+  );
+  remote.commits.push(commit);
+  branch.commitId = commit.id;
+  return next;
 }
 export function getDiff(state: RepositoryState, staged = false): FileDiff[] {
   const { head, index, working } = snapshots(state);

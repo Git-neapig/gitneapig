@@ -176,6 +176,15 @@ export function modifyWorkingFile(
   rebuildChanges(next, index, working);
   return next;
 }
+export function resolveConflict(
+  state: RepositoryState,
+  path: string,
+  content: string | null,
+): RepositoryState {
+  if (!state.mergeState?.conflictedPaths.includes(path))
+    fail("INVALID_ARGUMENT", "This file is not conflicted.");
+  return modifyWorkingFile(state, path, content);
+}
 export function ancestors(commits: Commit[], id: string | null): Set<string> {
   const result = new Set<string>(),
     queue = id ? [id] : [];

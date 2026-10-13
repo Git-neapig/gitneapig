@@ -75,6 +75,54 @@ export const commandRegistry: readonly CommandCoreDefinition[] = [
       "作業中またはステージした変更を比較します。",
     ),
     simulatorSupported: true,
+  },
+{
+    key: "branch",
+    name: "git branch",
+    category: "BRANCH",
+    syntax: ["git branch", "git branch <name>", "git branch -d <name>"],
+    shortDescription: text(
+      "브랜치를 조회하거나 생성·삭제합니다.",
+      "List, create, or delete a branch.",
+      "ブランチの一覧表示、作成、削除を行います。",
+    ),
+    simulatorSupported: true,
+  },
+{
+    key: "switch",
+    name: "git switch",
+    category: "BRANCH",
+    syntax: ["git switch <name>", "git switch -c <name>"],
+    shortDescription: text(
+      "기존 브랜치로 이동하거나 새 브랜치를 만듭니다.",
+      "Switch to an existing or newly created branch.",
+      "既存または新しいブランチに切り替えます。",
+    ),
+    simulatorSupported: true,
+  },
+{
+    key: "checkout",
+    name: "git checkout",
+    category: "BRANCH",
+    syntax: ["git checkout <name>", "git checkout -b <name>"],
+    shortDescription: text(
+      "기존 구문으로 브랜치를 전환합니다.",
+      "Switch branches using the older checkout syntax.",
+      "従来のcheckout構文でブランチを切り替えます。",
+    ),
+    simulatorSupported: true,
+  },
+{
+    key: "merge",
+    name: "git merge",
+    category: "MERGE",
+    syntax: ["git merge <branch>"],
+    shortDescription: text(
+      "다른 브랜치의 이력을 현재 브랜치로 통합합니다.",
+      "Integrate another branch into the current branch.",
+      "別のブランチの履歴を現在のブランチに統合します。",
+    ),
+    simulatorSupported: true,
   }
 ].map((item) => ({
   ...item,

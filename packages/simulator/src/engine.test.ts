@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RepositoryState } from "@gitneapig/shared";
-import { createRepository, executeCommand, getDiff, modifyWorkingFile, snapshots } from "./index";
+import { createRepository, evaluateConditions, executeCommand, getDiff, modifyWorkingFile, parseCommand, resolveConflict, snapshots } from "./index";
 
 const run = (state: RepositoryState, command: string) => {
   const result = executeCommand(state, command);
@@ -22,7 +22,35 @@ const base = () =>
     { "README.md": "hello\n", "app.txt": "one\ntwo\nthree\nfour\n" },
     true,
   );
+function divergent(sameFile = false) {
+  let state = run(base(), "git switch -c feature");
+  state = save(
+    state,
+    sameFile ? "app.txt" : "feature.txt",
+    sameFile ? "FEATURE\ntwo\nthree\nfour\n" : "feature",
+    "Feature work",
+  );
+  state = run(state, "git switch main");
+  return save(
+    state,
+    sameFile ? "app.txt" : "main.txt",
+    sameFile ? "MAIN\ntwo\nthree\nfour\n" : "main",
+    "Main work",
+  );
+}
 describe("parser and failure isolation", () => {
+  it("supports quoted messages, escapes, empty quote fragments and legacy checkout", () => {
+    expect(parseCommand(`git commit -m 'fix: two words'`).options["-m"]).toBe(
+      "fix: two words",
+    );
+    expect(parseCommand('git commit -m "fix \\"quote\\""').options["-m"]).toBe(
+      'fix "quote"',
+    );
+    expect(parseCommand("git checkout -b feature/login").key).toBe("checkout");
+    expect(parseCommand('git add "space name.txt"').args).toEqual([
+      "space name.txt",
+    ]);
+  });
   it.each([
     "git reset --hard",
     "echo hi",
@@ -137,5 +165,94 @@ describe("snapshots, add, commit and diff", () => {
     const state = save(createRepository(), "__proto__", "data");
     expect(Object.keys(snapshots(state).head)).toEqual(["__proto__"]);
     expect(snapshots(state).head["__proto__"]).toBe("data");
+  });
+});
+describe("branches and merge", () => {
+  it.each(["git switch -c feature", "git checkout -b feature"])(
+    "creates and switches with %s",
+    (command) => {
+      const state = run(base(), command);
+      expect(state.currentBranch).toBe("feature");
+      expect(state.branches[1].upstream).toBe(null);
+      expect(executeCommand(state, command).errorCode).toBe(
+        "BRANCH_ALREADY_EXISTS",
+      );
+    },
+  );
+  it("preserves dirty files on branch creation and refuses destructive switching", () => {
+    let state = run(
+      modifyWorkingFile(base(), "README.md", "dirty"),
+      "git switch -c feature",
+    );
+    expect(snapshots(state).working["README.md"]).toBe("dirty");
+    state = save(state, "README.md", "feature");
+    state = modifyWorkingFile(state, "README.md", "new dirty");
+    expect(executeCommand(state, "git switch main").nextState).toEqual(state);
+  });
+  it("fast-forwards without inventing a merge commit", () => {
+    let state = run(base(), "git switch -c feature");
+    state = save(state, "feature.txt", "f");
+    state = run(state, "git switch main");
+    const merged = executeCommand(state, "git merge feature");
+    expect(merged.nextState.commits).toHaveLength(2);
+    expect(merged.nextState.headCommitId).toBe("c2");
+    expect(merged.events).toContainEqual({
+      type: "MERGE_COMPLETED",
+      commitId: "c2",
+    });
+  });
+  it("merges independent paths using both parents and evaluates conditions", () => {
+    const state = run(divergent(), "git merge feature");
+    expect(state.commits.at(-1)?.parentIds).toEqual(["c3", "c2"]);
+    expect(snapshots(state).head).toMatchObject({
+      "feature.txt": "feature",
+      "main.txt": "main",
+    });
+    expect(
+      evaluateConditions(state, [
+        { type: "MERGE_COMPLETED" },
+        { type: "CURRENT_BRANCH", branchName: "main" },
+      ]),
+    ).toBe(true);
+  });
+  it("merges independent lines in the same file", () => {
+    let state = run(base(), "git switch -c feature");
+    state = save(state, "app.txt", "FIRST\ntwo\nthree\nfour\n");
+    state = run(state, "git switch main");
+    state = save(state, "app.txt", "one\ntwo\nthree\nLAST\n");
+    state = run(state, "git merge feature");
+    expect(snapshots(state).head["app.txt"]).toBe("FIRST\ntwo\nthree\nLAST\n");
+  });
+  it("creates a recoverable conflict, forbids premature commit, then stages and commits resolution", () => {
+    const before = divergent(true),
+      result = executeCommand(before, "git merge feature");
+    expect(result.errorCode).toBe("MERGE_CONFLICT");
+    expect(before.mergeState).toBe(null);
+    let state = result.nextState;
+    expect(state.mergeState?.conflictedPaths).toEqual(["app.txt"]);
+    expect(executeCommand(state, "git add .").errorCode).toBe("MERGE_CONFLICT");
+    expect(executeCommand(state, "git commit -m resolve").errorCode).toBe(
+      "MERGE_CONFLICT",
+    );
+    expect(executeCommand(state, "git switch main").errorCode).toBe(
+      "MERGE_IN_PROGRESS",
+    );
+    state = resolveConflict(state, "app.txt", "BOTH\ntwo\nthree\nfour\n");
+    state = run(state, "git add app.txt");
+    expect(state.mergeState?.conflictedPaths).toEqual([]);
+    state = run(state, "git commit -m resolve");
+    expect(state.mergeState).toBe(null);
+    expect(state.commits.at(-1)?.parentIds).toEqual(["c3", "c2"]);
+  });
+  it("logs only reachable commits and prevents deletion of unmerged or current branches", () => {
+    const state = divergent();
+    expect(
+      executeCommand(state, "git log --graph --oneline").output,
+    ).not.toContain("Feature work");
+    expect(executeCommand(state, "git branch -d feature").success).toBe(false);
+    expect(executeCommand(state, "git branch -d main").success).toBe(false);
+    expect(
+      run(run(state, "git merge feature"), "git branch -d feature").branches,
+    ).toHaveLength(1);
   });
 });

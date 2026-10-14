@@ -1,4 +1,5 @@
 @import "./base/shell-home.css";
+@import "./base/learning.css";
 @import "./base/account.css";
 .policy-page {
   max-width: 880px;

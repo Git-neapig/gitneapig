@@ -1,0 +1,584 @@
+.practice-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.practice-picker .free-playground {
+  grid-column: 1/-1;
+}
+.practice-picker .card {
+  height: 100%;
+}
+.practice-picker h2 {
+  font-size: 24px;
+  line-height: 32px;
+  margin: 20px 0 12px;
+}
+.practice-suggestion {
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  height: max(470px, min(740px, calc(100dvh - 260px)));
+  min-height: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background: var(--color-surface-1);
+}
+.terminal-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  background: var(--color-bg);
+}
+.terminal-output {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: auto;
+  padding: 20px;
+  scrollbar-gutter: stable;
+}
+.terminal-entry {
+  margin-bottom: 20px;
+}
+.terminal-entry pre {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 21px;
+  color: var(--color-text-muted);
+}
+.terminal-entry .terminal-command {
+  color: var(--color-text);
+}
+.terminal-command > span {
+  color: var(--color-primary);
+}
+.terminal-entry .terminal-error {
+  color: var(--color-danger);
+}
+.terminal-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--color-border);
+  min-height: 56px;
+  padding: 6px 12px 6px 20px;
+}
+.terminal-input > span {
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+}
+.terminal-input input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 40px;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  font: 13px var(--font-mono);
+  /* Keep each typed character visible, including repeated hyphens in WebKit. */
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+.terminal-new-output {
+  position: absolute;
+  bottom: 68px;
+  right: 16px;
+  background: var(--color-surface-3);
+}
+.tool-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--color-border);
+}
+.tool-panel .tabs {
+  flex-shrink: 0;
+}
+.tool-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.tool-content h3 {
+  font-size: 15px;
+  line-height: 24px;
+  margin: 0;
+}
+.section-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.section-label h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 30px;
+}
+.graph-layout {
+  display: grid;
+  min-width: 0;
+  padding: 12px 10px;
+}
+.graph-commits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.graph-commits li {
+  height: 92px;
+  padding: 7px 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.graph-labels {
+  display: flex;
+  gap: 4px;
+  max-height: 22px;
+  min-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.graph-labels .badge {
+  font-size: 10px;
+  line-height: 14px;
+  padding: 2px 5px;
+}
+.branch-label,
+.remote-label {
+  font: 10px/18px var(--font-mono);
+  border-radius: 4px;
+  padding: 0 4px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.remote-label {
+  color: var(--color-info);
+  background: var(--color-surface-3);
+}
+.commit-message {
+  font-size: 12px;
+  line-height: 19px;
+  max-height: 38px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.commit-message code {
+  color: var(--color-primary);
+}
+.graph-commits small {
+  font: 10px/16px var(--font-mono);
+}
+.state-panel {
+  padding: 16px;
+}
+.state-panel section {
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+  margin-top: 20px;
+}
+.state-panel section h3 {
+  margin-bottom: 12px;
+}
+.file-list,
+.change-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.file-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+}
+.file-list li > code {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.change-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.file-status {
+  font-size: 10px;
+  color: var(--color-warning);
+}
+.status-deleted,
+.status-conflicted {
+  color: var(--color-danger);
+}
+.status-added,
+.status-resolved {
+  color: var(--color-success);
+}
+.ref-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.ref-row small {
+  width: 100%;
+}
+.file-editor {
+  font: 13px/22px var(--font-mono);
+  resize: vertical;
+  min-height: 200px;
+}
+.command-guide {
+  padding: 0 16px;
+}
+.command-guide section {
+  border-bottom: 1px solid var(--color-border);
+  padding: 16px 0;
+}
+.command-guide pre {
+  background: var(--color-bg);
+  padding: 8px;
+  font-size: 11px;
+  line-height: 20px;
+}
+.command-guide p {
+  font-size: 13px;
+  line-height: 22px;
+}
+.command-guide .guide-selected {
+  border-left: 3px solid var(--color-primary);
+  padding-left: 12px;
+}
+.lesson-list {
+  display: grid;
+  gap: 20px;
+}
+.lesson-list > .card {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.lesson-number {
+  font: 26px/36px var(--font-mono);
+  color: var(--color-primary);
+  align-self: flex-start;
+}
+.lesson-list-content {
+  flex: 1;
+  min-width: 0;
+}
+.lesson-list h2 {
+  font-size: 22px;
+  line-height: 30px;
+  margin: 12px 0 8px;
+}
+.lesson-list .progress {
+  width: 100%;
+}
+.lesson-stages {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0;
+  margin: 0 0 32px;
+  list-style: none;
+}
+.lesson-stages li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-text-subtle);
+  padding-bottom: 12px;
+}
+.lesson-stages li.reached {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.lesson-stages li[aria-current] {
+  color: var(--color-text);
+}
+.lesson-stages li span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  background: var(--color-surface-3);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.lesson-stage {
+  max-width: none;
+  margin: 0 auto;
+  min-height: 350px;
+}
+.lesson-practice {
+  max-width: none;
+}
+.lesson-body {
+  max-width: 840px;
+  line-height: 28px;
+  color: var(--color-text-muted);
+}
+.lesson-navigation {
+  display: flex;
+  justify-content: space-between;
+  max-width: none;
+  margin: 28px auto 0;
+}
+.lesson-graph {
+  max-width: 580px;
+  border-left: 2px solid var(--color-border);
+  padding-left: 20px;
+}
+.lesson-examples {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+.lesson-examples section {
+  border-left: 2px solid var(--color-primary);
+  padding-left: 20px;
+}
+.lesson-examples pre,
+.reference-detail pre {
+  background: var(--color-surface-2);
+  padding: 16px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+.lesson-examples p {
+  margin-bottom: 4px;
+}
+.comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  margin: 40px 0;
+}
+.comparison > div {
+  border-top: 3px solid var(--color-info);
+  padding: 24px 0;
+  font-size: 18px;
+  line-height: 30px;
+}
+.comparison > div:last-child {
+  border-color: var(--color-success);
+}
+.conversation {
+  display: grid;
+  gap: 24px;
+  margin: 32px 0;
+}
+.message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+.message > div {
+  min-width: 0;
+}
+.message strong {
+  font-size: 13px;
+}
+.message p {
+  font-size: 13px;
+  line-height: 22px;
+  color: var(--color-text-muted);
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+.goal-line {
+  border-left: 3px solid var(--color-primary);
+  padding-left: 14px;
+}
+.completion {
+  padding: 32px 0;
+  text-align: center;
+  max-width: 760px;
+  margin: auto;
+}
+.completion > svg {
+  margin-bottom: 14px;
+}
+.completion h2 {
+  font-size: 24px;
+  line-height: 32px;
+}
+.quest-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.quest-list h2 {
+  font-size: 24px;
+  line-height: 32px;
+  margin: 24px 0 12px;
+}
+.quest-number {
+  font: 22px var(--font-mono);
+  color: var(--color-primary);
+}
+.locked-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.quest-workspace {
+  display: grid;
+  grid-template-columns: minmax(220px, 24fr) minmax(0, 76fr);
+  grid-template-rows: 230px minmax(0, 1fr);
+  gap: 16px;
+  height: max(650px, min(850px, calc(100dvh - 250px)));
+}
+.quest-center {
+  grid-column: 2;
+  grid-row: 1/3;
+  min-width: 0;
+  min-height: 0;
+}
+.quest-center .workspace {
+  height: 100%;
+  grid-template-columns: minmax(0, 52fr) minmax(0, 24fr);
+}
+.quest-team,
+.quest-objectives {
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-right: 14px;
+}
+.quest-team {
+  grid-column: 1;
+  grid-row: 1;
+}
+.quest-objectives {
+  grid-column: 1;
+  grid-row: 2;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+.quest-team h2,
+.quest-objectives h2 {
+  font-size: 16px;
+  line-height: 24px;
+  margin-bottom: 12px;
+}
+.teammate-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.team-messages {
+  display: grid;
+  gap: 18px;
+}
+.objective-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.objective-list li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.objective-list svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.objective-list strong {
+  font-size: 13px;
+  line-height: 22px;
+}
+.objective-list p {
+  display: none;
+}
+.objective-list .is-complete {
+  color: var(--color-success);
+}
+.collaboration {
+  display: grid;
+  gap: 10px;
+}
+.collaboration p {
+  font-size: 11px;
+  margin: 0 0 8px;
+}
+.collaboration .button {
+  font-size: 12px;
+}
+.hint-panel {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+.hint-panel h3 {
+  font-size: 15px;
+  line-height: 24px;
+}
+.hint-panel p {
+  font-size: 12px;
+  line-height: 21px;
+  color: var(--color-text-muted);
+}
+.quest-story {
+  max-width: 960px;
+}
+.daily-intro {
+  max-width: 880px;
+  margin: 40px auto;
+  padding: 48px 0;
+  border-top: 1px solid var(--color-border);
+}
+.daily-intro > svg {
+  margin-bottom: 24px;
+}
+.daily-intro h2 {
+  font-size: 32px;
+  line-height: 42px;
+  margin-top: 28px;
+}
+.daily-intro p {
+  max-width: 640px;
+  font-size: 17px;
+  line-height: 28px;
+  color: var(--color-text-muted);
+  margin-bottom: 32px;
+}
+.daily-hints {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+.daily-hints h3 {
+  font-size: 18px;
+  line-height: 26px;
+}

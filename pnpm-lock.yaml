@@ -126,6 +126,9 @@ importers:
       '@gitneapig/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@gitneapig/simulator':
+        specifier: workspace:*
+        version: link:../../packages/simulator
       i18next:
         specifier: ^25.6.3
         version: 25.10.10(typescript@5.9.3)

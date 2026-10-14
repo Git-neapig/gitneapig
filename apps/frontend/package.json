@@ -14,6 +14,7 @@
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@gitneapig/shared": "workspace:*",
+    "@gitneapig/simulator": "workspace:*",
     "i18next": "^25.6.3",
     "lucide-react": "^0.577.0",
     "react": "^19.2.0",

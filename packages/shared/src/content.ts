@@ -1,5 +1,5 @@
 import type { LocalizedText } from "./index";
-import type { CommandCategory, CommandKey } from "./simulator";
+import type { CommandCategory, CommandKey, RepositoryState } from "./simulator";
 
 export type CommandExample = {
   command: string;
@@ -33,4 +33,13 @@ export type LessonCommandExample = {
   explanation: LocalizedText;
   example?: string;
   comparisonNote?: LocalizedText;
+};
+export type PlaygroundKey = "FREE" | "BASIC" | "BRANCH" | "MERGE" | "REMOTE";
+export type PlaygroundDefinition = {
+  key: PlaygroundKey;
+  title: LocalizedText;
+  description: LocalizedText;
+  initialState: RepositoryState;
+  practiceSuggestions: LocalizedText[];
+  recommendedCommandKeys: CommandKey[];
 };

@@ -7,7 +7,9 @@ import { useSession } from "../lib/session";
 import { Avatar, IconButton } from "./ui";
 import { Failure, Loading } from "./feedback";
 export const accountLinks: string[][] = [];
-const navigation: string[][] = [];
+const navigation = [
+  ["/practice", "practice"],
+];
 export function Shell() {
   const { t, language } = useLocale(),
     session = useSession(),

@@ -1,5 +1,5 @@
-import type { LocalizedText } from "./index";
-import type { CommandCategory, CommandKey, RepositoryState } from "./simulator";
+import type { Difficulty, LocalizedText } from "./index";
+import type { CommandCategory, CommandKey, RepositoryState, SimulatorCondition } from "./simulator";
 
 export type CommandExample = {
   command: string;
@@ -20,6 +20,24 @@ export type CommandGuideItem = Omit<
   CommandCoreDefinition,
   "simulatorSupported"
 >;
+export type TeamMessage = {
+  id: string;
+  teammateId?: string;
+  speakerName: string;
+  avatarKey: string;
+  role?: LocalizedText;
+  message: LocalizedText;
+};
+export type LessonSummary = {
+  id: string;
+  slug: string;
+  order: number;
+  title: LocalizedText;
+  summary: LocalizedText;
+  difficulty: Difficulty;
+  guestAccessible: boolean;
+  xpReward: number;
+};
 export const lessonStageTypes = [
   "SITUATION",
   "WHY",
@@ -28,11 +46,43 @@ export const lessonStageTypes = [
   "PRACTICE",
   "RESULT",
 ] as const;
+export type LessonStageType = (typeof lessonStageTypes)[number];
 export type LessonCommandExample = {
   command: string;
   explanation: LocalizedText;
   example?: string;
   comparisonNote?: LocalizedText;
+};
+export type LessonVisualization =
+  | { type: "GIT_GRAPH"; state: RepositoryState }
+  | { type: "COMPARISON"; left: LocalizedText; right: LocalizedText }
+  | { type: "TEAM_CONVERSATION"; messages: TeamMessage[] };
+export type LessonStage = {
+  type: LessonStageType;
+  title: LocalizedText;
+  body: LocalizedText;
+  visualization?: LessonVisualization;
+  guideNote?: LocalizedText;
+  commandExamples?: LessonCommandExample[];
+};
+export type LessonPracticeDefinition = {
+  goal: LocalizedText;
+  initialState: RepositoryState;
+  successConditions: SimulatorCondition[];
+  relevantCommandKeys: CommandKey[];
+  solution?: LessonCommandExample[];
+};
+export type LessonDefinition = LessonSummary & {
+  stages: LessonStage[];
+  practice: LessonPracticeDefinition;
+};
+export type LessonProgressSummary = {
+  lessonId: string;
+  slug: string;
+  highestReachedStageIndex: 0 | 1 | 2 | 3 | 4 | 5;
+  completed: boolean;
+  progressPercent: number;
+  completedAt: string | null;
 };
 export type PlaygroundKey = "FREE" | "BASIC" | "BRANCH" | "MERGE" | "REMOTE";
 export type PlaygroundDefinition = {

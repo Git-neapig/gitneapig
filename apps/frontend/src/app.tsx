@@ -1,6 +1,7 @@
 import { Route, Routes, Link } from "react-router-dom";
 import { Shell } from "./components/shell";
 
+import { PracticePage } from "./pages/practice";
 import { AuthPage } from "./pages/auth";
 import { useLocale } from "./lib/i18n";
 import { SessionProvider } from "./lib/session";
@@ -25,7 +26,7 @@ export function App() {
           
           
           
-          
+          <Route path="practice" element={<PracticePage />} />
           
           
           

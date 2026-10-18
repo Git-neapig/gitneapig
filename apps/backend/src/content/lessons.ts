@@ -1,5 +1,14 @@
-import type { LessonDefinition, LessonStage, LocalizedText } from "@gitneapig/shared";
-import { createRepository, mergePlayground, modifyWorkingFile, seedCommit } from "@gitneapig/simulator";
+import type {
+  LessonDefinition,
+  LessonStage,
+  LocalizedText,
+} from "@gitneapig/shared";
+import {
+  createRepository,
+  mergePlayground,
+  modifyWorkingFile,
+  seedCommit,
+} from "@gitneapig/simulator";
 export const t = (ko: string, en: string, ja: string): LocalizedText => ({
   ko,
   en,
@@ -30,6 +39,12 @@ const staging = modifyWorkingFile(
   "Unfinished ideas\n",
 );
 const mergeState = mergePlayground();
+const remote = seedCommit(
+  basic,
+  "README.md",
+  "# Our project\nReady to share\n",
+  "Prepare release",
+);
 
 export const lessons: LessonDefinition[] = [
   {
@@ -772,6 +787,189 @@ export const lessons: LessonDefinition[] = [
         },
       ],
       relevantCommandKeys: ["status", "switch", "merge", "log"],
+    },
+  },
+  {
+    id: "lesson-5",
+    slug: "remote",
+    order: 5,
+    title: t(
+      "원격 · Fetch · Pull · Push",
+      "Remote · Fetch · Pull · Push",
+      "リモート・Fetch・Pull・Push",
+    ),
+    summary: t(
+      "로컬 이력과 팀의 원격 이력을 동기화합니다.",
+      "Synchronize local history with the team remote.",
+      "ローカル履歴とチームのリモート履歴を同期します。",
+    ),
+    difficulty: "INTERMEDIATE",
+    guestAccessible: false,
+    xpReward: 260,
+    stages: [
+      stage(
+        "SITUATION",
+        t(
+          "커밋했는데 팀원에게 안 보여요",
+          "A commit your teammate cannot see",
+          "コミットがチームに見えない",
+        ),
+        t(
+          "로컬 커밋은 내 저장소에만 있습니다. 팀이 사용하는 원격 저장소에 공유해야 다른 사람이 가져갈 수 있습니다.",
+          "A local commit exists only in your repository. Publish it to the team remote so others can fetch it.",
+          "ローカルのコミットは自分のリポジトリにだけ存在します。チームのリモートに共有すると他の人が取得できます。",
+        ),
+        {
+          visualization: {
+            type: "TEAM_CONVERSATION",
+            messages: [
+              {
+                id: "l5-m1",
+                speakerName: "Milo",
+                avatarKey: "cream",
+                message: t(
+                  "릴리스 커밋을 원격에서 찾을 수 없어요. 아직 로컬에 있나요?",
+                  "I cannot find the release commit on the remote. Is it still local?",
+                  "リモートでリリースのコミットが見つかりません。まだローカルですか？",
+                ),
+              },
+              {
+                id: "l5-m2",
+                speakerName: "Pip",
+                avatarKey: "primary",
+                message: t(
+                  "네, 로컬 main에 기록했어요. 이제 origin으로 보내 공유할게요.",
+                  "Yes, it is committed on local main. I’ll publish it to origin now.",
+                  "はい、ローカルmainに記録しました。これからoriginに送って共有します。",
+                ),
+              },
+            ],
+          },
+        },
+      ),
+      stage(
+        "WHY",
+        t("서로 다른 저장소", "Separate repositories", "別々のリポジトリ"),
+        t(
+          "원격 저장소는 실시간으로 자동 동기화되지 않습니다. 가져오기와 보내기를 명시적으로 수행해야 합니다. 먼저 원격의 변경을 이해하면 팀 작업을 덮어쓰는 실수를 줄입니다.",
+          "Repositories do not automatically synchronize in real time. Fetching and pushing are explicit operations. Understanding remote changes first helps avoid overwriting team work.",
+          "リポジトリはリアルタイムに自動同期しません。取得と送信を明示的に行います。先にリモート変更を理解するとチームの作業を上書きするミスを減らせます。",
+        ),
+        {
+          visualization: {
+            type: "COMPARISON",
+            left: t(
+              "로컬 커밋만 생성: 팀원의 저장소에는 아직 없음",
+              "Commit locally: the teammate’s repository does not have it yet",
+              "ローカルでコミット：チームのリポジトリにはまだない",
+            ),
+            right: t(
+              "원격에 push: 공유 저장소에 게시해 팀원이 fetch할 수 있음",
+              "Push to the remote: publish so teammates can fetch the commit",
+              "リモートにpush：共有先に公開するとチームがfetchできる",
+            ),
+          },
+        },
+      ),
+      stage(
+        "CONCEPT",
+        t(
+          "origin/main은 관찰한 위치",
+          "origin/main is your last observation",
+          "origin/mainは最後に観測した位置",
+        ),
+        t(
+          "fetch는 원격 커밋과 추적 포인터를 갱신하지만 현재 파일은 바꾸지 않습니다. pull은 fetch 후 현재 브랜치에 통합합니다. push는 로컬 커밋을 보냅니다. upstream은 기본 원격·브랜치를 지정합니다.",
+          "Fetch updates remote objects and tracking pointers without changing working files. Pull fetches and integrates into your current branch. Push sends local commits. An upstream specifies the default remote and branch.",
+          "fetchはファイルを変えずにリモートのコミットと追跡ポインタを更新します。pullは取得後に現在のブランチへ統合します。pushはローカルコミットを送ります。upstreamは既定のリモートとブランチです。",
+        ),
+        {
+          visualization: { type: "GIT_GRAPH", state: remote },
+          guideNote: t(
+            "로컬 main과 origin/main의 차이를 보세요. 공유 전에는 로컬 커밋이 한 개 앞서 있습니다.",
+            "compare local main with origin/main; before publishing, local main is one commit ahead.",
+            "ローカルmainとorigin/mainを比べましょう。共有前はローカルが1コミット先にあります。",
+          ),
+        },
+      ),
+      stage(
+        "COMMAND",
+        t("방향을 구분하세요", "Know the direction", "方向を区別する"),
+        t(
+          "이 명령들은 상황에 따라 선택하며 모두 순서대로 실행하는 지시가 아닙니다. fetch는 가져오기, pull은 가져온 이력의 통합, push는 공유에 사용합니다. 원격이 앞서면 이력을 통합한 뒤 push하세요. -u는 upstream을 설정합니다.",
+          "Choose these commands for the situation; this is not a required sequence. Fetch retrieves history, pull fetches and integrates it, and push publishes it. Integrate remote work before pushing if it is ahead. -u sets upstream.",
+          "これらは状況に合わせて選ぶコマンドで、すべてを順番に実行する指示ではありません。fetchは取得、pullは取得と統合、pushは共有です。リモートが先に進んでいる場合は統合後にpushしましょう。-uはupstreamを設定します。",
+        ),
+        {
+          commandExamples: [
+            {
+              command: "git fetch <remote>",
+              example: "git fetch origin",
+              explanation: t(
+                "원격의 최신 이력을 관찰합니다.",
+                "Observe the latest remote history.",
+                "最新のリモート履歴を取得します。",
+              ),
+            },
+            {
+              command: "git pull <remote> <branch>",
+              example: "git pull origin main",
+              explanation: t(
+                "원격 main을 현재 브랜치에 통합합니다.",
+                "Integrate remote main into the current branch.",
+                "リモートmainを現在のブランチに統合します。",
+              ),
+            },
+            {
+              command: "git push [-u] <remote> <branch>",
+              example: "git push -u origin main",
+              explanation: t(
+                "로컬 main을 공유하고 upstream을 설정합니다.",
+                "Publish local main and set its upstream.",
+                "ローカルmainを共有しupstreamを設定します。",
+              ),
+            },
+          ],
+        },
+      ),
+      stage(
+        "PRACTICE",
+        t(
+          "준비한 릴리스를 공유",
+          "Share the prepared release",
+          "準備したリリースを共有",
+        ),
+        t(
+          "로컬 main에는 아직 원격에 없는 커밋이 있습니다. origin의 main과 로컬 main이 같은 끝점을 가리키도록 공유하세요.",
+          "Local main has a commit that is not on the remote. Publish it so local main and origin main point to the same tip.",
+          "ローカルmainにはリモートにないコミットがあります。ローカルとoriginのmainが同じ先端を指すよう共有しましょう。",
+        ),
+      ),
+      stage(
+        "RESULT",
+        t(
+          "팀에 전달된 이력",
+          "History shared with your team",
+          "チームに共有された履歴",
+        ),
+        t(
+          "로컬과 원격이 같은 커밋을 가리킵니다. 이제 퀘스트에서 브랜치·커밋·병합·원격을 함께 사용해 보세요.",
+          "Local and remote now point to the same commit. Apply branches, commits, merges, and remotes together in Quests.",
+          "ローカルとリモートが同じコミットを指しています。クエストでブランチ・コミット・マージ・リモートを組み合わせましょう。",
+        ),
+      ),
+    ],
+    practice: {
+      goal: t(
+        "origin/main과 동기화하기",
+        "Synchronize with origin/main",
+        "origin/mainと同期",
+      ),
+      initialState: remote,
+      successConditions: [
+        { type: "REMOTE_SYNCED", remoteName: "origin", branchName: "main" },
+      ],
+      relevantCommandKeys: ["fetch", "pull", "push", "log"],
     },
   },
 ];

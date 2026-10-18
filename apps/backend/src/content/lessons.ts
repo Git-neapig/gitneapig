@@ -1,5 +1,5 @@
 import type { LessonDefinition, LessonStage, LocalizedText } from "@gitneapig/shared";
-import { createRepository, modifyWorkingFile, seedCommit } from "@gitneapig/simulator";
+import { createRepository, mergePlayground, modifyWorkingFile, seedCommit } from "@gitneapig/simulator";
 export const t = (ko: string, en: string, ja: string): LocalizedText => ({
   ko,
   en,
@@ -29,6 +29,7 @@ const staging = modifyWorkingFile(
   "notes.txt",
   "Unfinished ideas\n",
 );
+const mergeState = mergePlayground();
 
 export const lessons: LessonDefinition[] = [
   {
@@ -404,6 +405,373 @@ export const lessons: LessonDefinition[] = [
         },
       ],
       relevantCommandKeys: ["status", "diff", "add", "commit"],
+    },
+  },
+  {
+    id: "lesson-3",
+    slug: "branch",
+    order: 3,
+    title: t("브랜치", "Branch", "ブランチ"),
+    summary: t(
+      "안정적인 작업과 새 기능 작업을 분리합니다.",
+      "Separate stable work from a new feature.",
+      "安定した作業と新機能の作業を分けます。",
+    ),
+    difficulty: "BEGINNER",
+    guestAccessible: true,
+    xpReward: 180,
+    stages: [
+      stage(
+        "SITUATION",
+        t(
+          "새 로그인 기능을 맡았습니다",
+          "A new login feature",
+          "新しいログイン機能の担当に",
+        ),
+        t(
+          "팀은 main의 안정적인 버전을 사용 중입니다. 아직 실험 중인 로그인 기능을 바로 main에 기록해도 될까요?",
+          "The team is using the stable version on main. Should an experimental login feature go directly into main?",
+          "チームはmainの安定版を使用中です。実験中のログイン機能を直接mainに記録してよいでしょうか？",
+        ),
+        {
+          visualization: {
+            type: "TEAM_CONVERSATION",
+            messages: [
+              {
+                id: "l3-m1",
+                speakerName: "Milo",
+                avatarKey: "cream",
+                message: t(
+                  "main은 팀이 사용 중이에요. 로그인 기능은 어디에서 작업할까요?",
+                  "The team is using main. Where should we develop the login feature?",
+                  "チームはmainを使っています。ログイン機能はどこで開発しましょうか？",
+                ),
+              },
+              {
+                id: "l3-m2",
+                speakerName: "Pip",
+                avatarKey: "primary",
+                message: t(
+                  "feature/login을 만들고 이동해서 main과 작업 흐름을 분리할게요.",
+                  "I’ll create and switch to feature/login to separate this work from main.",
+                  "feature/loginを作って切り替え、mainと作業の流れを分けます。",
+                ),
+              },
+            ],
+          },
+        },
+      ),
+      stage(
+        "WHY",
+        t("동시에 작업하기", "Work in parallel", "並行して作業する"),
+        t(
+          "브랜치를 사용하면 안정된 기준점을 유지하며 별도로 작업할 수 있습니다. 브랜치는 폴더 복사본이 아니라 커밋을 가리키는 이름입니다.",
+          "Branches let you work independently while keeping a stable baseline. A branch is a name pointing to a commit, not a copied folder.",
+          "ブランチを使うと安定した基準を保ちながら別に作業できます。ブランチはコピーしたフォルダではなく、コミットを指す名前です。",
+        ),
+        {
+          visualization: {
+            type: "COMPARISON",
+            left: t(
+              "main에서 실험: 안정된 작업과 미완성 기능이 같은 이력에 섞임",
+              "Experiment on main: stable work and unfinished features share one history",
+              "mainで実験：安定した作業と未完成の機能が同じ履歴に混ざる",
+            ),
+            right: t(
+              "기능 브랜치: main의 기준점을 유지하며 별도 이력을 작성",
+              "Feature branch: keep the main baseline while developing a separate history",
+              "機能ブランチ：mainの基準を保ちながら別の履歴で開発",
+            ),
+          },
+        },
+      ),
+      stage(
+        "CONCEPT",
+        t(
+          "HEAD와 브랜치 포인터",
+          "HEAD and branch pointers",
+          "HEADとブランチのポインタ",
+        ),
+        t(
+          "새 브랜치는 현재 커밋에서 시작합니다. 브랜치를 전환하면 HEAD의 대상과 파일 내용이 바뀝니다. 새 커밋은 현재 브랜치만 앞으로 이동시킵니다.",
+          "A new branch starts at the current commit. Switching changes the branch HEAD follows and the files you see. A new commit advances only the current branch.",
+          "新しいブランチは現在のコミットから始まります。切り替えるとHEADの対象とファイル内容が変わります。新しいコミットが進めるのは現在のブランチだけです。",
+        ),
+        {
+          visualization: { type: "GIT_GRAPH", state: basic },
+          guideNote: t(
+            "브랜치를 만들기만 하면 HEAD는 그대로입니다. switch로 현재 브랜치를 바꾸세요.",
+            "creating a branch leaves HEAD where it is; switch changes the current branch.",
+            "ブランチを作るだけではHEADは変わりません。switchで現在のブランチを切り替えます。",
+          ),
+        },
+      ),
+      stage(
+        "COMMAND",
+        t("만들기와 이동하기", "Create and switch", "作成と切り替え"),
+        t(
+          "branch는 만들기만 하고 switch는 이동합니다. switch -c는 두 동작을 함께 합니다. checkout -b도 이 실습에서 동일한 결과를 만듭니다.",
+          "branch only creates; switch changes your current branch. switch -c does both. checkout -b produces the same result in this exercise.",
+          "branchは作成だけ、switchは切り替えです。switch -cは両方を行います。この実習ではcheckout -bも同じ結果になります。",
+        ),
+        {
+          commandExamples: [
+            {
+              command: "git branch <name>",
+              example: "git branch feature/login",
+              explanation: t(
+                "현재 위치에서 브랜치를 만듭니다.",
+                "Create a branch at the current position.",
+                "現在の位置でブランチを作ります。",
+              ),
+            },
+            {
+              command: "git switch <branch>",
+              example: "git switch feature/login",
+              explanation: t(
+                "생성한 브랜치로 이동합니다.",
+                "Switch to the new branch.",
+                "作成したブランチに切り替えます。",
+              ),
+            },
+            {
+              command: "git switch -c <new-branch>",
+              example: "git switch -c feature/login",
+              explanation: t(
+                "한 번에 생성하고 이동합니다.",
+                "Create and switch in one command.",
+                "1回で作成して切り替えます。",
+              ),
+              comparisonNote: t(
+                "위의 두 명령 대신 사용합니다.",
+                "Use instead of the two commands above.",
+                "上の2つのコマンドの代わりに使います。",
+              ),
+            },
+          ],
+        },
+      ),
+      stage(
+        "PRACTICE",
+        t(
+          "기능 브랜치로 이동",
+          "Move to your feature branch",
+          "機能ブランチへ移動",
+        ),
+        t(
+          "feature/login 브랜치를 만들고 그 브랜치로 이동하세요. 어떤 지원 명령 조합을 사용해도 됩니다.",
+          "Create feature/login and switch to it. Any supported command combination is valid.",
+          "feature/loginを作り、そのブランチに切り替えてください。対応するコマンドの組み合わせならどれでも構いません。",
+        ),
+      ),
+      stage(
+        "RESULT",
+        t(
+          "독립된 작업 공간",
+          "An independent line of work",
+          "独立した作業の流れ",
+        ),
+        t(
+          "이제 새 커밋은 feature/login을 움직이고 main은 기존 위치에 남습니다. 완성된 작업을 통합하는 방법을 다음에 배웁니다.",
+          "New commits now move feature/login while main stays where it was. Next, learn how to integrate completed work.",
+          "新しいコミットはfeature/loginを進め、mainは元の位置に残ります。次は完成した作業の統合を学びます。",
+        ),
+      ),
+    ],
+    practice: {
+      goal: t(
+        "feature/login으로 이동하기",
+        "Switch to feature/login",
+        "feature/loginに切り替える",
+      ),
+      initialState: basic,
+      successConditions: [
+        { type: "CURRENT_BRANCH", branchName: "feature/login" },
+        { type: "BRANCH_EXISTS", branchName: "feature/login" },
+      ],
+      relevantCommandKeys: ["branch", "switch", "checkout", "log"],
+    },
+  },
+  {
+    id: "lesson-4",
+    slug: "merge",
+    order: 4,
+    title: t("병합", "Merge", "マージ"),
+    summary: t(
+      "두 작업 흐름을 통합하고 충돌의 의미를 이해합니다.",
+      "Integrate two lines of work and understand conflicts.",
+      "2つの作業を統合し、競合の意味を理解します。",
+    ),
+    difficulty: "INTERMEDIATE",
+    guestAccessible: false,
+    xpReward: 220,
+    stages: [
+      stage(
+        "SITUATION",
+        t(
+          "각자 끝낸 작업을 합치려면",
+          "Bring completed work together",
+          "完成した作業をまとめるには",
+        ),
+        t(
+          "로그인 기능을 만드는 동안 팀원이 main의 문서를 개선했습니다. 두 브랜치는 서로 다른 새 커밋을 갖습니다.",
+          "While you built login, a teammate improved documentation on main. Both branches now have new commits.",
+          "ログインを作る間にチームメンバーがmainの文書を改善しました。両方のブランチに新しいコミットがあります。",
+        ),
+        {
+          visualization: {
+            type: "TEAM_CONVERSATION",
+            messages: [
+              {
+                id: "l4-m1",
+                speakerName: "Milo",
+                avatarKey: "cream",
+                message: t(
+                  "main의 문서 개선을 마쳤어요. 로그인 기능도 준비됐나요?",
+                  "The documentation update on main is ready. Is login ready too?",
+                  "mainの文書改善が終わりました。ログイン機能も準備できましたか？",
+                ),
+              },
+              {
+                id: "l4-m2",
+                speakerName: "Pip",
+                avatarKey: "primary",
+                message: t(
+                  "네, feature/login의 완성된 작업을 main으로 병합할게요.",
+                  "Yes. I’ll merge the completed work from feature/login into main.",
+                  "はい。feature/loginの完成した作業をmainへマージします。",
+                ),
+              },
+            ],
+          },
+        },
+      ),
+      stage(
+        "WHY",
+        t(
+          "복사보다 이력 통합",
+          "Integrate history, not just files",
+          "ファイルだけでなく履歴を統合",
+        ),
+        t(
+          "파일만 복사하면 어느 작업에서 온 변경인지 연결이 끊깁니다. merge는 두 이력의 관계를 유지하며 내용을 통합합니다.",
+          "Copying files loses the relationship to the work that produced them. Merge combines content while preserving both histories.",
+          "ファイルのコピーだけでは変更の由来との関係が失われます。mergeは両方の履歴を保ちながら内容を統合します。",
+        ),
+        {
+          visualization: {
+            type: "COMPARISON",
+            left: t(
+              "파일 복사: 결과만 옮기고 두 작업의 이력 관계는 연결하지 못함",
+              "Copy files: transfer content without connecting the two histories",
+              "ファイルのコピー：内容は移るが2つの履歴はつながらない",
+            ),
+            right: t(
+              "병합: 공통 조상을 기준으로 두 이력을 연결하고 변경을 통합",
+              "Merge: connect both histories and integrate changes from their common ancestor",
+              "マージ：共通祖先を基準に2つの履歴をつなぎ変更を統合",
+            ),
+          },
+        },
+      ),
+      stage(
+        "CONCEPT",
+        t(
+          "공통 조상에서 비교하기",
+          "Compare from a common ancestor",
+          "共通の祖先から比較する",
+        ),
+        t(
+          "분기된 이력은 공통 조상·현재 브랜치·상대 브랜치를 비교하는 3-way merge로 합칩니다. 같은 부분을 다르게 바꾸면 충돌이 생깁니다. 한쪽 이력이 다른 쪽에 포함되면 fast-forward로 포인터만 이동할 수 있습니다.",
+          "Diverging histories use a three-way merge of the common ancestor and both branch tips. Conflicting edits to the same region need a decision. If one history includes the other, a fast-forward can simply move the pointer.",
+          "分岐した履歴は共通祖先と両ブランチの先端を比較する3-way mergeで統合します。同じ箇所への異なる変更は判断が必要です。一方の履歴が他方を含む場合、fast-forwardでポインタだけを進められます。",
+        ),
+        {
+          visualization: { type: "GIT_GRAPH", state: mergeState },
+          guideNote: t(
+            "main에서 병합하면 main이 이동하고 feature/login은 기존 위치에 남습니다.",
+            "merging on main moves main while feature/login stays at its existing tip.",
+            "mainでマージするとmainが進み、feature/loginは元の先端に残ります。",
+          ),
+        },
+      ),
+      stage(
+        "COMMAND",
+        t(
+          "받아들일 브랜치에서 병합",
+          "Merge from the receiving branch",
+          "受け入れるブランチでマージ",
+        ),
+        t(
+          "merge는 현재 브랜치를 바꿉니다. 먼저 목적지로 이동하세요. 충돌이 있으면 파일을 수정하고 add한 뒤 commit하여 병합을 끝냅니다.",
+          "Merge updates the current branch. Switch to the destination first. If a conflict occurs, edit the file, add it, and commit to finish the merge.",
+          "mergeは現在のブランチを更新します。先に統合先へ切り替えましょう。競合時はファイルを編集し、addしてからcommitで完了します。",
+        ),
+        {
+          commandExamples: [
+            {
+              command: "git switch <branch>",
+              example: "git switch main",
+              explanation: t(
+                "통합 대상인 main으로 이동합니다.",
+                "Switch to main, the receiving branch.",
+                "統合先のmainに切り替えます。",
+              ),
+            },
+            {
+              command: "git merge <branch>",
+              example: "git merge feature/login",
+              explanation: t(
+                "기능 이력을 main에 통합합니다.",
+                "Integrate feature history into main.",
+                "機能の履歴をmainに統合します。",
+              ),
+            },
+          ],
+        },
+      ),
+      stage(
+        "PRACTICE",
+        t(
+          "두 이력을 연결하세요",
+          "Connect both histories",
+          "2つの履歴をつなぐ",
+        ),
+        t(
+          "main에서 feature/login을 병합하세요. 이 프로젝트는 서로 다른 파일을 수정했으므로 자동으로 통합할 수 있습니다.",
+          "Merge feature/login into main. These changes affect different files, so they can be integrated automatically.",
+          "mainでfeature/loginをマージしてください。異なるファイルを変更したので自動で統合できます。",
+        ),
+      ),
+      stage(
+        "RESULT",
+        t("부모가 둘인 커밋", "A commit with two parents", "親が2つのコミット"),
+        t(
+          "병합 커밋은 두 브랜치의 이전 끝점을 부모로 갖습니다. Graph에서 두 이력이 연결되었는지 확인하세요.",
+          "The merge commit has both previous branch tips as parents. Inspect how the histories connect in Graph.",
+          "マージコミットは両ブランチの以前の先端を親に持ちます。Graphで履歴の接続を確認しましょう。",
+        ),
+      ),
+    ],
+    practice: {
+      goal: t(
+        "main에 기능 병합하기",
+        "Merge the feature into main",
+        "mainに機能をマージ",
+      ),
+      initialState: mergeState,
+      successConditions: [
+        { type: "CURRENT_BRANCH", branchName: "main" },
+        { type: "MERGE_COMPLETED" },
+        {
+          type: "COMMIT_REACHABLE",
+          commitId: mergeState.branches.find(
+            (branch) => branch.name === "feature/login",
+          )!.commitId!,
+          branchName: "main",
+        },
+      ],
+      relevantCommandKeys: ["status", "switch", "merge", "log"],
     },
   },
 ];

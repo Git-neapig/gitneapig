@@ -2,11 +2,13 @@ import { useState } from "react";
 import type {
   RepositoryState,
   SimulatorEvent,
+  SimulatorCondition,
 } from "@gitneapig/shared";
 import {
   executeCommand,
   modifyWorkingFile,
   validatePath,
+  evaluateConditions,
 } from "@gitneapig/simulator";
 export type TerminalEntry = {
   command: string;
@@ -15,6 +17,7 @@ export type TerminalEntry = {
 };
 export function useSimulator(
   initial: RepositoryState,
+  conditions?: SimulatorCondition[],
 ) {
   const [runtime, setRuntime] = useState(() => ({
     repository: structuredClone(initial),
@@ -30,7 +33,9 @@ export function useSimulator(
       return {
         ...previous,
         repository: result.nextState,
-        passed: false,
+        passed:
+          !!conditions?.length &&
+          evaluateConditions(result.nextState, conditions),
         entries: [
           ...previous.entries,
           { command, output: result.output, success: result.success },
@@ -47,7 +52,8 @@ export function useSimulator(
       return {
         ...previous,
         repository,
-        passed: false,
+        passed:
+          !!conditions?.length && evaluateConditions(repository, conditions),
       };
     });
   }

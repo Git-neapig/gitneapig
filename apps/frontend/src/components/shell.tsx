@@ -8,6 +8,7 @@ import { Avatar, IconButton } from "./ui";
 import { Failure, Loading } from "./feedback";
 export const accountLinks: string[][] = [];
 const navigation = [
+  ["/learn", "learn"],
   ["/practice", "practice"],
 ];
 export function Shell() {

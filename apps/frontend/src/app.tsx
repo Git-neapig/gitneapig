@@ -2,6 +2,7 @@ import { Route, Routes, Link } from "react-router-dom";
 import { Shell } from "./components/shell";
 
 import { PracticePage } from "./pages/practice";
+import { LearnPage } from "./pages/learn";
 import { AuthPage } from "./pages/auth";
 import { useLocale } from "./lib/i18n";
 import { SessionProvider } from "./lib/session";
@@ -24,8 +25,7 @@ export function App() {
       <Routes>
         <Route element={<Shell />}>
           
-          
-          
+          <Route path="learn" element={<LearnPage />} />
           <Route path="practice" element={<PracticePage />} />
           
           

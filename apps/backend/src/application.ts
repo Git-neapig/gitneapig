@@ -13,6 +13,9 @@ import { ApiExceptionFilter } from "./common/errors";
 import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
 import { SessionGuard } from "./auth/session.guard";
+import { ContentService } from "./content/content.service";
+import { ContentController } from "./content/content.controller";
+import { RewardsService } from "./progress/rewards.service";
 
 export function originAllowed(
   method: string,
@@ -42,12 +45,15 @@ export class ApplicationModule {
       controllers: [
         HealthController,
         AuthController,
+        ContentController,
       ],
       providers: [
         { provide: "CONFIG", useValue: config },
         PrismaService,
         AuthService,
         SessionGuard,
+        ContentService,
+        RewardsService,
       ],
     };
   }

@@ -15,6 +15,7 @@ import { AuthService } from "./auth/auth.service";
 import { SessionGuard } from "./auth/session.guard";
 import { ContentService } from "./content/content.service";
 import { ContentController } from "./content/content.controller";
+import { RewardsService } from "./progress/rewards.service";
 
 export function originAllowed(
   method: string,
@@ -52,6 +53,7 @@ export class ApplicationModule {
         AuthService,
         SessionGuard,
         ContentService,
+        RewardsService,
       ],
     };
   }

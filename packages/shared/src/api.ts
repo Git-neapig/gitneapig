@@ -23,6 +23,12 @@ export type SignUpRequest = {
   avatarPresetKey?: string;
 };
 export type LoginRequest = Pick<SignUpRequest, "email" | "password">;
+export type CompletionRequest = { contentVersion?: string };
+export type CompletionResponse = {
+  completed: boolean;
+  firstCompletion: boolean;
+  xpAwarded: number;
+};
 export type ApiErrorResponse = {
   error: {
     code: string;

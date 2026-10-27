@@ -1,9 +1,46 @@
+import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import type { CompletionResponse } from "@gitneapig/shared";
+import { api } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { useLocale } from "../../lib/i18n";
 import { Alert, Button } from "../../components/ui";
+
+// Keep this in the runner: navigation/reset must not discard a pending save.
+export function useCompletion(
+  kind: "lessons" | "quests" | "daily-challenge",
+  id: string,
+) {
+  const { user, refresh } = useSession();
+  const [result, setResult] = useState<CompletionResponse | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const inFlight = useRef(false),
+    saved = useRef(false);
+  const save = useCallback(async () => {
+    if (!user || inFlight.current || saved.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await api<CompletionResponse>(`/${kind}/${id}/complete`, {
+          method: "POST",
+          body: {},
+        });
+      saved.current = true;
+      setResult(response);
+      // Profile refresh cannot invalidate an acknowledged completion.
+      if (user) void refresh().catch(() => undefined);
+    } catch (failure) {
+      setError(failure);
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
+  }, [id, kind, user, refresh]);
+  return { result, busy, error, save };
+}
 
 export function Completion({
   record,
@@ -13,12 +50,7 @@ export function Completion({
   title,
   summary,
 }: {
-  record: {
-    result: CompletionResponse | null;
-    busy: boolean;
-    error: unknown;
-    save: () => Promise<void>;
-  };
+  record: ReturnType<typeof useCompletion>;
   passed: boolean;
   previouslyCompleted?: boolean;
   daily?: boolean;

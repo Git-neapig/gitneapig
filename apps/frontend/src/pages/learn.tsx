@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, CheckCircle2, LockKeyhole } from "lucide-react";
 import type {
@@ -8,7 +8,7 @@ import type {
 } from "@gitneapig/shared";
 import { useLocale } from "../lib/i18n";
 import { useSession } from "../lib/session";
-import { useResource } from "../lib/api";
+import { api, useResource } from "../lib/api";
 import { Failure, Loading, PageHeading } from "../components/feedback";
 import {
   Alert,
@@ -23,6 +23,10 @@ import {
 import { useSimulator } from "../features/workspace/use-simulator";
 import { Workspace, ResetButton } from "../features/workspace/workspace";
 import { GitGraph } from "../features/workspace/graph";
+import {
+  Completion,
+  useCompletion,
+} from "../features/learning/completion";
 type LessonItem = LessonSummary & { progress?: LessonProgressSummary };
 export function LearnPage() {
   const { t, text } = useLocale(),
@@ -161,26 +165,50 @@ function LessonRunner({
       lesson.practice.initialState,
       lesson.practice.successConditions,
     ),
+    record = useCompletion("lessons", lesson.id),
     [query, setQuery] = useSearchParams(),
     [initialStage] = useState(
       progress?.completed
         ? 0
         : Math.min(progress?.highestReachedStageIndex ?? 0, 4),
     ),
-    [showSolution, setShowSolution] = useState(false);
+    [showSolution, setShowSolution] = useState(false),
+    [error, setError] = useState<unknown>(null);
   const requested = lesson.stages.findIndex(
     (item) => item.type === query.get("stage"),
   );
   const stageIndex = requested >= 0 ? requested : initialStage;
   const stage = lesson.stages[stageIndex],
     success = runtime.passed;
-  const completed = runtime.passed;
+  const completed =
+    !!progress?.completed ||
+    !!record.result;
+  const transitioned = useRef(-1);
+  const { save } = record;
+  useEffect(() => {
+    if (!success || transitioned.current === runtime.attempt) return;
+    transitioned.current = runtime.attempt;
+    setQuery(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        next.set("stage", "RESULT");
+        return next;
+      },
+      { replace: true },
+    );
+    void save();
+  }, [success, runtime.attempt, setQuery, save]);
   function changeStage(index: number) {
     setQuery((previous) => {
       const next = new URLSearchParams(previous);
       next.set("stage", lesson.stages[index].type);
       return next;
     });
+    if (user)
+      void api(`/lessons/${lesson.id}/progress`, {
+        method: "PATCH",
+        body: { highestReachedStageIndex: index },
+      }).catch(setError);
   }
   const visualization = stage.visualization;
   return (
@@ -206,6 +234,15 @@ function LessonRunner({
           </li>
         ))}
       </ol>
+      {error ? (
+        <Failure
+          error={error}
+          retry={() => {
+            setError(null);
+            changeStage(stageIndex);
+          }}
+        />
+      ) : null}
       <section className={`lesson-stage lesson-${stage.type.toLowerCase()}`}>
         {stage.type !== "PRACTICE" && stage.type !== "RESULT" ? (
           <div className="section-label">
@@ -289,7 +326,17 @@ function LessonRunner({
         ) : null}
         {stage.type === "RESULT" ? (
           <>
-            <Alert tone={success ? "success" : "info"}>{t(success ? "success" : "practiceRequired")}</Alert>
+            <Completion
+              record={record}
+              passed={success}
+              previouslyCompleted={completed}
+              title={text({
+                ko: "레슨 완료!",
+                en: "Lesson Complete!",
+                ja: "レッスン完了！",
+              })}
+              summary={text(stage.body)}
+            />
             {nextLesson ? (
               <section className="completion-next">
                 <span className="muted">{t("nextLesson")}</span>

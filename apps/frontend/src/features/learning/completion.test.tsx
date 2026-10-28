@@ -1,103 +1,87 @@
 // @vitest-environment jsdom
-import { act, cleanup, renderHook } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  render,
+  renderHook,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CompletionResponse } from "@gitneapig/shared";
-import { api } from "../../lib/api";
-import { useSession } from "../../lib/session";
-import { useCompletion } from "./completion";
+import { MemoryRouter } from "react-router-dom";
+import { Completion, useCompletion } from "./completion";
 
-vi.mock("../../lib/api", () => ({ api: vi.fn() }));
-vi.mock("../../lib/session", () => ({ useSession: vi.fn() }));
-const refresh = vi.fn();
-const response: CompletionResponse = {
-  completed: true,
-  firstCompletion: true,
-  xpAwarded: 100,
-};
+const mocks = vi.hoisted(() => ({
+  api: vi.fn(),
+  refresh: vi.fn(),
+  user: { id: "member" } as { id: string } | null,
+}));
+vi.mock("../../lib/api", () => ({ api: mocks.api }));
+vi.mock("../../lib/session", () => ({
+  useSession: () => ({ user: mocks.user, refresh: mocks.refresh }),
+}));
+vi.mock("../../lib/i18n", () => ({
+  useLocale: () => ({ t: (key: string) => key }),
+}));
 beforeEach(() => {
-  vi.resetAllMocks();
-  refresh.mockResolvedValue(undefined);
-  vi.mocked(useSession).mockReturnValue({
-    user: {
-      id: "member",
-      email: null,
-      nickname: "QA",
-      avatarUrl: "",
-      language: "en",
-      xp: 0,
-      level: 1,
-      streak: 0,
-      createdAt: "2026-01-01",
-    },
-    refresh,
-    loading: false,
-    epoch: 0,
-    setUser: vi.fn(),
-    logout: vi.fn(),
-    setLanguage: vi.fn(),
-  });
+  mocks.api.mockReset();
+  mocks.refresh.mockReset().mockResolvedValue(undefined);
+  mocks.user = { id: "member" };
+  sessionStorage.clear();
 });
 afterEach(cleanup);
 
-describe("completion save lifecycle", () => {
-  it("deduplicates concurrent saves and acknowledged completions", async () => {
-    let resolve!: (value: CompletionResponse) => void;
-    vi.mocked(api).mockReturnValue(
-      new Promise((done) => {
-        resolve = done;
-      }),
+describe("completion persistence is independent of result rendering", () => {
+  it("does not save or claim success just by opening Result", () => {
+    function Harness() {
+      const record = useCompletion("lessons", "lesson-1");
+      return <Completion record={record} passed={false} />;
+    }
+    render(
+      <MemoryRouter>
+        <Harness />
+      </MemoryRouter>,
     );
-    const { result } = renderHook(() => useCompletion("lessons", "lesson-1"));
-    let pending!: Promise<void>;
-    act(() => {
-      pending = result.current.save();
-      void result.current.save();
+    expect(screen.getByText("practiceRequired")).toBeTruthy();
+    expect(mocks.api).not.toHaveBeenCalled();
+  });
+  it("retries only persistence and suppresses concurrent and acknowledged duplicate saves", async () => {
+    mocks.api.mockRejectedValueOnce(new Error("offline")).mockResolvedValue({
+      completed: true,
+      firstCompletion: true,
+      xpAwarded: 100,
     });
-    expect(result.current.busy).toBe(true);
-    expect(api).toHaveBeenCalledTimes(1);
-    expect(api).toHaveBeenCalledWith("/lessons/lesson-1/complete", {
+    const { result } = renderHook(() => useCompletion("lessons", "lesson-1"));
+    await act(async () => {
+      await result.current.save();
+    });
+    expect(result.current.error).toBeTruthy();
+    expect(result.current.result).toBeNull();
+    await act(async () => {
+      await Promise.all([result.current.save(), result.current.save()]);
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.result?.xpAwarded).toBe(100);
+    await act(async () => {
+      await result.current.save();
+    });
+    expect(mocks.api).toHaveBeenCalledTimes(2);
+    expect(mocks.api).toHaveBeenLastCalledWith("/lessons/lesson-1/complete", {
       method: "POST",
       body: {},
     });
+  });
+  it("keeps guest completion in tab storage without sending account rewards", async () => {
+    mocks.user = null;
+    const { result } = renderHook(() =>
+      useCompletion("daily-challenge", "today-id"),
+    );
     await act(async () => {
-      resolve(response);
-      await pending;
+      await result.current.save();
     });
-    await act(() => result.current.save());
-    expect(result.current.result).toEqual(response);
-    expect(result.current.busy).toBe(false);
-    expect(api).toHaveBeenCalledTimes(1);
-    expect(refresh).toHaveBeenCalledTimes(1);
-  });
-
-  it("unlocks retry after rejection and keeps a saved result if profile refresh fails", async () => {
-    const failure = new Error("offline");
-    vi.mocked(api)
-      .mockRejectedValueOnce(failure)
-      .mockResolvedValueOnce(response);
-    refresh.mockRejectedValue(new Error("profile unavailable"));
-    const { result } = renderHook(() => useCompletion("lessons", "lesson-1"));
-    await act(() => result.current.save());
-    expect(result.current.error).toBe(failure);
-    expect(result.current.result).toBeNull();
-    expect(result.current.busy).toBe(false);
-    await act(() => result.current.save());
-    expect(result.current.error).toBeNull();
-    expect(result.current.result).toEqual(response);
-    await act(() => result.current.save());
-    expect(api).toHaveBeenCalledTimes(2);
-  });
-
-  it("does not send member requests for a guest", async () => {
-    vi.mocked(useSession).mockReturnValue({
-      ...useSession(),
-      user: null,
-      refresh,
-    });
-    const { result } = renderHook(() => useCompletion("lessons", "lesson-1"));
-    await act(() => result.current.save());
-    expect(api).not.toHaveBeenCalled();
-    expect(refresh).not.toHaveBeenCalled();
-    expect(result.current.result).toBeNull();
+    expect(sessionStorage.getItem("gitneapig-guest-daily-challenge-v1")).toBe(
+      '["today-id"]',
+    );
+    expect(mocks.api).not.toHaveBeenCalled();
+    expect(result.current.result?.xpAwarded).toBe(0);
   });
 });

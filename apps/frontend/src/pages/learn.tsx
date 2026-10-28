@@ -25,13 +25,15 @@ import { Workspace, ResetButton } from "../features/workspace/workspace";
 import { GitGraph } from "../features/workspace/graph";
 import {
   Completion,
+  guestCompleted,
   useCompletion,
 } from "../features/learning/completion";
 type LessonItem = LessonSummary & { progress?: LessonProgressSummary };
 export function LearnPage() {
   const { t, text } = useLocale(),
     { user, epoch } = useSession(),
-    resource = useResource<{ items: LessonItem[] }>("/lessons", epoch);
+    resource = useResource<{ items: LessonItem[] }>("/lessons", epoch),
+    completed = guestCompleted("lessons");
   return (
     <>
       <PageHeading title={t("learn")} description={t("learnDescription")} />
@@ -44,7 +46,8 @@ export function LearnPage() {
           {resource.data?.items.map((lesson) => {
             const locked = !user && !lesson.guestAccessible,
               done =
-                lesson.progress?.completed,
+                lesson.progress?.completed ||
+                (!user && completed.includes(lesson.id)),
               inProgress =
                 !done && (lesson.progress?.highestReachedStageIndex ?? 0) > 0;
             return (
@@ -182,7 +185,8 @@ function LessonRunner({
     success = runtime.passed;
   const completed =
     !!progress?.completed ||
-    !!record.result;
+    !!record.result ||
+    (!user && guestCompleted("lessons").includes(lesson.id));
   const transitioned = useRef(-1);
   const { save } = record;
   useEffect(() => {

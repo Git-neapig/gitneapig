@@ -7,6 +7,19 @@ import { useSession } from "../../lib/session";
 import { useLocale } from "../../lib/i18n";
 import { Alert, Button } from "../../components/ui";
 
+export function guestCompleted(kind: string): string[] {
+  try {
+    const value: unknown = JSON.parse(
+      sessionStorage.getItem(`gitneapig-guest-${kind}-v1`) ?? "[]",
+    );
+    return Array.isArray(value)
+      ? value.filter((v) => typeof v === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 // Keep this in the runner: navigation/reset must not discard a pending save.
 export function useCompletion(
   kind: "lessons" | "quests" | "daily-challenge",
@@ -19,15 +32,29 @@ export function useCompletion(
   const inFlight = useRef(false),
     saved = useRef(false);
   const save = useCallback(async () => {
-    if (!user || inFlight.current || saved.current) return;
+    if (inFlight.current || saved.current) return;
     inFlight.current = true;
     setBusy(true);
     setError(null);
     try {
-      const response = await api<CompletionResponse>(`/${kind}/${id}/complete`, {
+      let response: CompletionResponse;
+      if (user) {
+        response = await api<CompletionResponse>(`/${kind}/${id}/complete`, {
           method: "POST",
           body: {},
         });
+      } else {
+        const completed = guestCompleted(kind);
+        response = {
+          completed: true,
+          firstCompletion: !completed.includes(id),
+          xpAwarded: 0,
+        };
+        sessionStorage.setItem(
+          `gitneapig-guest-${kind}-v1`,
+          JSON.stringify([...new Set([...completed, id])]),
+        );
+      }
       saved.current = true;
       setResult(response);
       // Profile refresh cannot invalidate an acknowledged completion.

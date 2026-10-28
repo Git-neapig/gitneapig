@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { AuthResponse, CurrentUser, Language } from "@gitneapig/shared";
 import { api, ApiClientError } from "./api";
 import i18n from "./i18n";
@@ -41,7 +41,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, updateUser] = useState<CurrentUser | null>(null),
     [loading, setLoading] = useState(true),
     [epoch, setEpoch] = useState(0);
-  const navigate = useNavigate();
+  const navigate = useNavigate(),
+    location = useLocation();
   const identity = useRef<string | null>(null);
   const setUser = useCallback((next: CurrentUser | null) => {
     const nextId = next?.id ?? null;
@@ -78,6 +79,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, [setUser]);
+  useEffect(() => {
+    const expired = () => {
+      setUser(null);
+      navigate(
+        `/login?reason=session-expired&returnTo=${encodeURIComponent(safePath(location.pathname + location.search))}`,
+        { replace: true },
+      );
+    };
+    window.addEventListener("gitneapig:session-expired", expired);
+    return () =>
+      window.removeEventListener("gitneapig:session-expired", expired);
+  }, [location.pathname, location.search, navigate, setUser]);
   async function logout() {
     await api("/auth/logout", { method: "POST" });
     setUser(null);

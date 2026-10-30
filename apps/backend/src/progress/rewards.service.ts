@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { CompletionResponse } from "@gitneapig/shared";
+import type { AchievementRule, CompletionResponse } from "@gitneapig/shared";
 import { z } from "zod";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
@@ -74,10 +74,46 @@ export class RewardsService {
         reward = lesson.xpReward;
       }
       const streak = nextStreak(user, dateKey);
+      const [lessonCount, questCount, dailyCount, achievements, unlocked] =
+        await Promise.all([
+          tx.lessonProgress.count({
+            where: { userId, completedAt: { not: null } },
+          }),
+          tx.questProgress.count({
+            where: { userId, completedAt: { not: null } },
+          }),
+          tx.dailyChallengeProgress.count({ where: { userId } }),
+          tx.achievement.findMany(),
+          tx.userAchievement.findMany({ where: { userId } }),
+        ]);
+      let achievementXp = 0;
+      for (const achievement of achievements) {
+        if (unlocked.some((row) => row.achievementId === achievement.id))
+          continue;
+        const rule = achievement.rule as unknown as AchievementRule;
+        const qualifies =
+          rule.type === "LESSON_COMPLETION_COUNT"
+            ? lessonCount >= rule.count
+            : rule.type === "QUEST_COMPLETION_COUNT"
+              ? questCount >= rule.count
+              : rule.type === "DAILY_COMPLETION_COUNT"
+                ? dailyCount >= rule.count
+                : rule.type === "STREAK_AT_LEAST" && streak >= rule.days;
+        if (!qualifies) continue;
+        await tx.userAchievement.create({
+          data: {
+            userId,
+            achievementId: achievement.id,
+            unlockedAt: now,
+            xpAwarded: true,
+          },
+        });
+        achievementXp += achievement.xpReward;
+      }
       await tx.user.update({
         where: { id: userId },
         data: {
-          xp: { increment: reward },
+          xp: { increment: reward + achievementXp },
           streak,
           streakLastActivityDateKey: dateKey,
         },

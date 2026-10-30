@@ -3,12 +3,14 @@ import type { Request, Response } from "express";
 import { AuthService } from "../auth/auth.service";
 import { SessionGuard, type MemberRequest } from "../auth/session.guard";
 import { RewardsService } from "../progress/rewards.service";
+import { ProfileService } from "../profile/profile.service";
 import { ContentService } from "./content.service";
 @Controller("api/v1")
 export class ContentController {
   constructor(private readonly content: ContentService,
     private readonly auth: AuthService,
-    private readonly rewards: RewardsService
+    private readonly rewards: RewardsService,
+    private readonly profiles: ProfileService
   ) {}
   @Get("lessons") async lessons(
     @Req() request: Request,
@@ -50,5 +52,8 @@ export class ContentController {
     @Body() body: unknown,
   ) {
     return this.rewards.complete(request.user.id, "LESSON", id, body);
+  }
+  @Get("achievements") achievements() {
+    return this.profiles.achievements();
   }
 }

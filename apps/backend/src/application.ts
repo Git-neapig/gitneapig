@@ -13,6 +13,7 @@ import { ApiExceptionFilter } from "./common/errors";
 import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
 import { SessionGuard } from "./auth/session.guard";
+import { ProfileService } from "./profile/profile.service";
 import { ContentService } from "./content/content.service";
 import { ContentController } from "./content/content.controller";
 import { RewardsService } from "./progress/rewards.service";
@@ -52,6 +53,7 @@ export class ApplicationModule {
         PrismaService,
         AuthService,
         SessionGuard,
+        ProfileService,
         ContentService,
         RewardsService,
       ],

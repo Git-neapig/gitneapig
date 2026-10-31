@@ -1,5 +1,6 @@
-
-import type { LessonProgressSummary } from "@gitneapig/shared";
+import { Injectable } from "@nestjs/common";
+import type { AchievementDefinition, AchievementSummary, LessonProgressSummary } from "@gitneapig/shared";
+import { PrismaService } from "../database/prisma.service";
 export function lessonProgress(
   lesson: { id: string; slug: string },
   progress?: { highestReachedStageIndex: number; completedAt: Date | null },
@@ -15,4 +16,35 @@ export function lessonProgress(
       : Math.floor((index / 6) * 100),
     completedAt: progress?.completedAt?.toISOString() ?? null,
   };
+}
+@Injectable()
+export class ProfileService {
+  constructor(private readonly prisma: PrismaService
+  ) {}
+  async achievements(
+    userId?: string,
+  ): Promise<{ items: AchievementSummary[] }> {
+    const rows = await this.prisma.achievement.findMany({
+      orderBy: { id: "asc" },
+      include: {
+        users: {
+          where: { userId: userId ?? "00000000-0000-0000-0000-000000000000" },
+        },
+      },
+    });
+    return {
+      items: rows.map((row) => {
+        const definition = row.content as unknown as AchievementDefinition;
+        return {
+          achievementId: row.id,
+          key: row.key,
+          title: definition.title,
+          description: definition.description,
+          xpReward: row.xpReward,
+          unlocked: row.users.length > 0,
+          unlockedAt: row.users[0]?.unlockedAt.toISOString() ?? null,
+        };
+      }),
+    };
+  }
 }

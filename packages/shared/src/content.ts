@@ -93,3 +93,33 @@ export type PlaygroundDefinition = {
   practiceSuggestions: LocalizedText[];
   recommendedCommandKeys: CommandKey[];
 };
+export type AchievementCategory =
+  "BASICS" | "COLLABORATION" | "PRACTICE" | "CONSISTENCY";
+export type AchievementRule =
+  | {
+      type:
+        | "LESSON_COMPLETION_COUNT"
+        | "QUEST_COMPLETION_COUNT"
+        | "DAILY_COMPLETION_COUNT";
+      count: number;
+    }
+  | { type: "STREAK_AT_LEAST"; days: number };
+export type AchievementDefinition = {
+  id: string;
+  key: string;
+  category: AchievementCategory;
+  title: LocalizedText;
+  description: LocalizedText;
+  rule: AchievementRule;
+  xpReward: number;
+  iconKey: string;
+};
+export type AchievementSummary = {
+  achievementId: string;
+  key: string;
+  title: LocalizedText;
+  description: LocalizedText;
+  xpReward: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+};

@@ -16,6 +16,7 @@ import {
   snapshots,
 } from "@gitneapig/simulator";
 import { t } from "./lessons";
+import { attachObjectiveHints } from "./quest-hints";
 const team = [
   {
     id: "pip",
@@ -688,3 +689,4 @@ export const quests: QuestDefinition[] = [
     ],
   },
 ];
+for (const quest of quests) attachObjectiveHints(quest);

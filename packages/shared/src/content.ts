@@ -1,5 +1,5 @@
 import type { Difficulty, LocalizedText } from "./index";
-import type { CommandCategory, CommandKey, RepositoryState, SimulatorCondition } from "./simulator";
+import type { CommandCategory, CommandKey, RepositoryState, SimulatorCondition, SimulatorEvent, RemoteCommitSpec } from "./simulator";
 
 export type CommandExample = {
   command: string;
@@ -92,6 +92,90 @@ export type PlaygroundDefinition = {
   initialState: RepositoryState;
   practiceSuggestions: LocalizedText[];
   recommendedCommandKeys: CommandKey[];
+};
+export type QuestPullRequestState = {
+  id: string;
+  sourceBranch: string;
+  targetBranch: string;
+  status: "AVAILABLE" | "OPEN" | "CHANGES_REQUESTED" | "APPROVED" | "CLOSED";
+};
+export type QuestReviewState = {
+  id: string;
+  pullRequestId: string;
+  status: "PENDING" | "CHANGES_REQUESTED" | "RESOLVED" | "APPROVED";
+};
+export type QuestIssueState = { id: string; status: "OPEN" | "DONE" };
+export type QuestRuntimeState = {
+  pullRequests: QuestPullRequestState[];
+  reviews: QuestReviewState[];
+  issues: QuestIssueState[];
+};
+export type SimulatorEventCondition = {
+  type: "SIMULATOR_EVENT_OCCURRED";
+  eventType: SimulatorEvent["type"];
+};
+export type QuestUiCondition =
+  | { type: "PULL_REQUEST_OPENED"; pullRequestId?: string }
+  | { type: "REVIEW_RESOLVED"; reviewId?: string }
+  | { type: "ISSUE_DONE"; issueId?: string };
+export type QuestCondition =
+  SimulatorCondition | SimulatorEventCondition | QuestUiCondition;
+export type QuestObjective = {
+  id: string;
+  title: LocalizedText;
+  description: LocalizedText;
+  conditions: QuestCondition[];
+  hints?: [LocalizedText, LocalizedText, LocalizedText];
+};
+export type QuestTeammate = {
+  id: string;
+  name: string;
+  avatarKey: string;
+  role: LocalizedText;
+};
+export type QuestEventAction =
+  | { type: "ADD_MESSAGE"; message: TeamMessage }
+  | { type: "APPLY_REMOTE_COMMIT"; remoteCommit: RemoteCommitSpec }
+  | { type: "MODIFY_WORKING_FILE"; path: string; content: string }
+  | { type: "ENABLE_PULL_REQUEST"; pullRequestId: string }
+  | { type: "OPEN_REVIEW"; reviewId: string }
+  | {
+      type: "UPDATE_REVIEW";
+      reviewId: string;
+      status: QuestReviewState["status"];
+    }
+  | { type: "UPDATE_ISSUE"; issueId: string; status: QuestIssueState["status"] }
+  | { type: "UPDATE_OBJECTIVE"; objectiveId: string };
+export type QuestEventDefinition = {
+  id: string;
+  trigger:
+    "QUEST_START" | "AFTER_COMMAND" | "AFTER_SIMULATOR_EVENT" | "CONDITION_MET";
+  commandKey?: CommandKey;
+  simulatorEventType?: SimulatorEvent["type"];
+  condition?: QuestCondition;
+  actions: QuestEventAction[];
+};
+export type QuestDefinition = {
+  id: string;
+  slug: string;
+  order: number;
+  title: LocalizedText;
+  summary: LocalizedText;
+  story: LocalizedText;
+  team: QuestTeammate[];
+  initialState: RepositoryState;
+  unlockRule: { prerequisiteQuestId: string | null };
+  objectives: QuestObjective[];
+  events: QuestEventDefinition[];
+  successConditions: QuestCondition[];
+  hints: LocalizedText[];
+  xpReward: number;
+};
+export type QuestProgressResponse = {
+  questId: string;
+  completed: boolean;
+  completedAt: string | null;
+  xpAwarded: boolean;
 };
 export type AchievementCategory =
   "BASICS" | "COLLABORATION" | "PRACTICE" | "CONSISTENCY";

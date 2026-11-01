@@ -4,6 +4,7 @@ import { Shell } from "./components/shell";
 import { PracticePage } from "./pages/practice";
 import { LearnPage, LessonPage } from "./pages/learn";
 import { QuestPage, QuestsPage } from "./pages/quests";
+import { DailyPage } from "./pages/daily";
 import { AuthPage } from "./pages/auth";
 import { useLocale } from "./lib/i18n";
 import { SessionProvider } from "./lib/session";
@@ -31,7 +32,7 @@ export function App() {
           <Route path="practice" element={<PracticePage />} />
           <Route path="quests" element={<QuestsPage />} />
           <Route path="quests/:slug" element={<QuestPage />} />
-          
+          <Route path="daily-challenge" element={<DailyPage />} />
           <Route path="login" element={<AuthPage />} />
           <Route path="signup" element={<AuthPage signup />} />
           

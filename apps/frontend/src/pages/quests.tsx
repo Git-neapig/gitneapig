@@ -15,6 +15,7 @@ import { useLocale } from "../lib/i18n";
 import { useSession } from "../lib/session";
 import {
   Alert,
+  Avatar,
   Badge,
   Breadcrumb,
   Button,
@@ -145,11 +146,15 @@ function QuestRunner({
   const { t, text } = useLocale(),
     [attempt, setAttempt] = useState(() => startQuest(definition)),
     [entries, setEntries] = useState<TerminalEntry[]>([]),
+    [hints, setHints] = useState<Record<string, number>>({}),
     [resultView, setResultView] = useState(false),
     [attemptNumber, setAttemptNumber] = useState(0),
     [error, setError] = useState<unknown>(null);
   const record = useCompletion("quests", definition.id),
     transitioned = useRef(-1);
+  const chat = useRef<HTMLDivElement>(null),
+    followChat = useRef(true);
+  const [newMessages, setNewMessages] = useState(false);
   const complete = questCompleted(definition, attempt),
     { save } = record;
   useEffect(() => {
@@ -158,8 +163,70 @@ function QuestRunner({
     setResultView(true);
     void save();
   }, [complete, attemptNumber, save]);
+  useEffect(() => {
+    if (followChat.current && chat.current)
+      chat.current.scrollTop = chat.current.scrollHeight;
+    else setNewMessages(true);
+  }, [attempt.messages.length]);
   function run(command: string) {
     if (complete) return;
+    if (command.trim() === "hint") {
+      const objective = definition.objectives.find(
+        (item) => item.id === attempt.activeObjectiveId,
+      );
+      if (!objective?.hints) return;
+      const count = hints[objective.id] ?? 0;
+      if (count < 3) {
+        const person = definition.team[0];
+        let message = objective.hints[count];
+        const targetBranch = objective.conditions.find(
+          (condition) => condition.type === "CURRENT_BRANCH",
+        );
+        if (
+          count === 2 &&
+          targetBranch?.type === "CURRENT_BRANCH" &&
+          attempt.repository.branches.some(
+            (branch) => branch.name === targetBranch.branchName,
+          )
+        ) {
+          const command = `git switch ${targetBranch.branchName}`;
+          message = {
+            ko: `브랜치가 이미 있습니다. 생성하지 않고 이동하세요.\n${command}`,
+            en: `The branch already exists. Switch without creating it.\n${command}`,
+            ja: `ブランチは既存です。作成せず切り替えます。\n${command}`,
+          };
+        }
+        setAttempt((previous) => ({
+          ...previous,
+          messages: [
+            ...previous.messages,
+            {
+              id: `hint:${objective.id}:${count}`,
+              speakerName: person.name,
+              avatarKey: person.avatarKey,
+              message: {
+                ko: `${message.ko} (${count + 1}/3)`,
+                en: `${message.en} (${count + 1}/3)`,
+                ja: `${message.ja} (${count + 1}/3)`,
+              },
+              role: person.role,
+            },
+          ],
+        }));
+        setHints((previous) => ({ ...previous, [objective.id]: count + 1 }));
+      }
+      setEntries((previous) =>
+        [
+          ...previous,
+          {
+            command,
+            output: t(count < 3 ? "hintSent" : "allHintsShown"),
+            success: true,
+          },
+        ].slice(-500),
+      );
+      return;
+    }
     const next = executeQuestCommand(definition, attempt, command);
     setAttempt(next.attempt);
     setEntries((previous) =>
@@ -175,8 +242,11 @@ function QuestRunner({
     setAttempt(advanceQuest(definition, { ...attempt, repository }));
   }
   function reset() {
+    followChat.current = true;
+    setNewMessages(false);
     setAttempt(startQuest(definition));
     setEntries([]);
+    setHints({});
     setResultView(false);
     setAttemptNumber((previous) => previous + 1);
     setError(null);
@@ -277,6 +347,67 @@ function QuestRunner({
       />
       <p className="muted quest-story">{text(definition.story)}</p>
       <div className="quest-workspace">
+        <aside className="quest-team">
+          <h2>{t("team")}</h2>
+          <div className="teammate-row">
+            {definition.team.map((person) => (
+              <Avatar
+                key={person.id}
+                src={`/mascots/characters/${person.avatarKey}/avatar.png`}
+                alt={`${person.name} · ${text(person.role)}`}
+              />
+            ))}
+          </div>
+          {newMessages ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                if (chat.current)
+                  chat.current.scrollTop = chat.current.scrollHeight;
+                followChat.current = true;
+                setNewMessages(false);
+              }}
+            >
+              {t("newMessages")}
+            </Button>
+          ) : null}
+          <div
+            ref={chat}
+            className="team-messages"
+            role="log"
+            aria-live="polite"
+            aria-label={t("team")}
+            onScroll={() => {
+              if (chat.current) {
+                followChat.current =
+                  chat.current.scrollHeight -
+                    chat.current.scrollTop -
+                    chat.current.clientHeight <
+                  32;
+                if (followChat.current) setNewMessages(false);
+              }
+            }}
+          >
+            {attempt.messages.map((message) => (
+              <div key={message.id} className="message">
+                <Avatar
+                  size="sm"
+                  src={`/mascots/characters/${message.avatarKey}/avatar.png`}
+                  alt={message.speakerName}
+                />
+                <div>
+                  <strong>{message.speakerName}</strong>
+                  {message.role ? (
+                    <small className="teammate-role">
+                      {text(message.role)}
+                    </small>
+                  ) : null}
+                  <p>{text(message.message)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
         <div className="quest-center">
           <Workspace
             key={attemptNumber}
@@ -304,6 +435,13 @@ function QuestRunner({
             })}
           </ol>
           <Collaboration state={attempt.collaboration} action={action} />
+          <p className="quest-hint-guidance">
+            {text({
+              ko: "터미널에 hint를 입력하면 현재 목표의 힌트를 볼 수 있습니다. 목표마다 3단계 힌트가 제공됩니다.",
+              en: "Type hint in the terminal for the current objective. Each objective has three levels of hints.",
+              ja: "ターミナルにhintと入力すると現在の目標のヒントが表示されます。目標ごとに3段階のヒントがあります。",
+            })}
+          </p>
         </aside>
       </div>
       {error ? <Failure error={error} /> : null}

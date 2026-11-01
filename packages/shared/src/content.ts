@@ -177,6 +177,22 @@ export type QuestProgressResponse = {
   completedAt: string | null;
   xpAwarded: boolean;
 };
+export type DailyChallengeDefinition = {
+  id: string;
+  dateKey: string;
+  title: LocalizedText;
+  description: LocalizedText;
+  difficulty: Difficulty;
+  topic: LocalizedText;
+  initialState: RepositoryState;
+  successConditions: SimulatorCondition[];
+  hints: LocalizedText[];
+  xpReward: number;
+};
+export type DailyChallengeTemplate = Omit<
+  DailyChallengeDefinition,
+  "id" | "dateKey"
+> & { templateKey: string };
 export type AchievementCategory =
   "BASICS" | "COLLABORATION" | "PRACTICE" | "CONSISTENCY";
 export type AchievementRule =

@@ -3,6 +3,7 @@ import { Shell } from "./components/shell";
 
 import { PracticePage } from "./pages/practice";
 import { LearnPage, LessonPage } from "./pages/learn";
+import { QuestPage, QuestsPage } from "./pages/quests";
 import { AuthPage } from "./pages/auth";
 import { useLocale } from "./lib/i18n";
 import { SessionProvider } from "./lib/session";
@@ -28,8 +29,8 @@ export function App() {
           <Route path="learn" element={<LearnPage />} />
           <Route path="learn/:slug" element={<LessonPage />} />
           <Route path="practice" element={<PracticePage />} />
-          
-          
+          <Route path="quests" element={<QuestsPage />} />
+          <Route path="quests/:slug" element={<QuestPage />} />
           
           <Route path="login" element={<AuthPage />} />
           <Route path="signup" element={<AuthPage signup />} />

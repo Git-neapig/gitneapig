@@ -1,0 +1,90 @@
+.quest-story {
+  margin-bottom: 28px;
+  max-width: 1100px;
+}
+.quest-workspace {
+  grid-template-rows: minmax(300px, 1fr) minmax(200px, 1fr);
+}
+.quest-center .workspace {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+.quest-team {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.team-messages {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  padding-bottom: 16px;
+}
+.team-messages .message p {
+  white-space: pre-wrap;
+}
+.team-messages .message:last-child {
+  border-left: 2px solid var(--color-primary);
+  padding-left: 12px;
+}
+.teammate-role {
+  display: block;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+.quest-objectives {
+  overscroll-behavior: auto;
+}
+@media (min-width: 1100px) {
+  .page:has(.workspace) {
+    max-width: 1520px;
+  }
+  .quest-workspace {
+    height: max(650px, calc(100dvh - 260px));
+  }
+}
+@media (max-width: 800px) {
+  .lesson-practice .workspace {
+    height: auto;
+  }
+  .workspace-terminal > .terminal-panel {
+    min-height: 0;
+    height: 390px;
+    flex: 0 0 390px;
+  }
+  .workspace-introduction {
+    padding: 16px;
+  }
+  .lesson-practice .tool-panel {
+    max-height: 440px;
+  }
+  .lesson-practice .section-label {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .lesson-stages {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 16px;
+  }
+  .quest-workspace {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+  }
+  .quest-team,
+  .quest-center,
+  .quest-objectives {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .team-messages {
+    max-height: 340px;
+  }
+  .quest-center .workspace {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lesson-navigation > * {
+    max-width: 48%;
+    white-space: normal;
+  }
+}

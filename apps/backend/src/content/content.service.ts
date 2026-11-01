@@ -2,7 +2,15 @@ import { Injectable } from "@nestjs/common";
 import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { referenceRegistry, type DailyChallengeTemplate, type DailyChallengeDefinition, type LessonDefinition, type QuestDefinition, type CommandReferenceDefinition } from "@gitneapig/shared";
+import {
+  referenceRegistry,
+  type DailyChallengeTemplate,
+  type DailyChallengeDefinition,
+  type LessonDefinition,
+  type QuestDefinition,
+  type CommandReferenceDefinition,
+} from "@gitneapig/shared";
+import { referenceOptions } from "./reference-options";
 import { dailyTemplates } from "./daily";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
@@ -272,7 +280,7 @@ export class ContentService {
         const core = referenceRegistry.find((command) => command.key === row.key);
         if (!core) return [];
         return [{ ...core, id: row.id, difficulty: row.difficulty as keyof typeof rank,
-          searchContent: JSON.stringify([row.whenToUse, core.syntax]),
+          searchContent: JSON.stringify([row.whenToUse, referenceOptions[core.key], core.syntax]),
         }];
       })
       .filter(
@@ -309,6 +317,6 @@ export class ContentService {
         "COMMAND_NOT_FOUND",
         "The command was not found.",
       );
-    return { core, reference: row as unknown as CommandReferenceDefinition };
+    return { core, reference: row as unknown as CommandReferenceDefinition, options: referenceOptions[core.key] };
   }
 }

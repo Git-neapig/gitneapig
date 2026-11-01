@@ -1,5 +1,12 @@
-import { commandRegistry, referenceDifficulty, type CommandKey, type CommandReferenceDefinition, type LocalizedText } from "@gitneapig/shared";
+import {
+  commandRegistry,
+  referenceDifficulty,
+  type CommandKey,
+  type CommandReferenceDefinition,
+  type LocalizedText,
+} from "@gitneapig/shared";
 import { t } from "./lessons";
+import { extraReferences } from "./reference-extra";
 import { referenceExamples } from "./reference-examples";
 const details: Record<
   CommandKey,
@@ -197,4 +204,5 @@ export const references: CommandReferenceDefinition[] = [
           : [`quest-${Math.min(3, detail.lesson)}`],
     };
   }),
+  ...extraReferences,
 ];

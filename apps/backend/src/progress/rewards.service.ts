@@ -1,5 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import type { AchievementRule, CompletionResponse, QuestDefinition } from "@gitneapig/shared";
+import type {
+  AchievementRule,
+  CompletionResponse,
+  QuestDefinition,
+} from "@gitneapig/shared";
 import { z } from "zod";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
@@ -31,13 +35,15 @@ export class RewardsService {
   constructor(private readonly prisma: PrismaService) {}
   async complete(
     userId: string,
-    kind: "LESSON" | "QUEST",
+    kind: "LESSON" | "QUEST" | "DAILY",
     rawId: string,
     body: unknown,
   ): Promise<CompletionResponse> {
     completionSchema.parse(body ?? {});
     const id =
-        z.string().min(1).max(100).parse(rawId),
+        kind === "DAILY"
+          ? z.uuid().parse(rawId)
+          : z.string().min(1).max(100).parse(rawId),
       now = new Date(),
       dateKey = seoulDateKey(now);
     return this.prisma.serializable(async (tx) => {
@@ -72,7 +78,7 @@ export class RewardsService {
           },
         });
         reward = lesson.xpReward;
-      } else {
+      } else if (kind === "QUEST") {
         const quest = await tx.quest.findUnique({ where: { id } });
         if (!quest)
           throw new ApiError(
@@ -109,6 +115,41 @@ export class RewardsService {
           },
         });
         reward = quest.xpReward;
+      } else {
+        const challenge = await tx.dailyChallenge.findUnique({ where: { id } });
+        if (!challenge)
+          throw new ApiError(
+            404,
+            "CHALLENGE_NOT_FOUND",
+            "The challenge was not found.",
+          );
+        if (challenge.dateKey !== dateKey)
+          throw new ApiError(
+            409,
+            "DAILY_CHALLENGE_EXPIRED",
+            "A new daily challenge is available.",
+          );
+        const previous = await tx.dailyChallengeProgress.findUnique({
+          where: {
+            userId_challengeId_dateKey: { userId, challengeId: id, dateKey },
+          },
+        });
+        if (previous?.xpAwarded)
+          return { completed: true, firstCompletion: false, xpAwarded: 0 };
+        await tx.dailyChallengeProgress.upsert({
+          where: {
+            userId_challengeId_dateKey: { userId, challengeId: id, dateKey },
+          },
+          create: {
+            userId,
+            challengeId: id,
+            dateKey,
+            completedAt: now,
+            xpAwarded: true,
+          },
+          update: { xpAwarded: true },
+        });
+        reward = challenge.xpReward;
       }
       const streak = nextStreak(user, dateKey);
       const [lessonCount, questCount, dailyCount, achievements, unlocked] =

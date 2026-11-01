@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 seedContent(prisma)
   .then(() =>
     console.info(
-      "Seeded 5 lessons, 10 achievements, 5 quests.",
+      "Seeded 5 lessons, 10 achievements, 5 quests, 5 daily templates.",
     ),
   )
   .catch((error) => {

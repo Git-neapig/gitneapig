@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req, Res, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
 import type { Request, Response } from "express";
 import { AuthService } from "../auth/auth.service";
 import { SessionGuard, type MemberRequest } from "../auth/session.guard";
@@ -7,10 +18,11 @@ import { ProfileService } from "../profile/profile.service";
 import { ContentService } from "./content.service";
 @Controller("api/v1")
 export class ContentController {
-  constructor(private readonly content: ContentService,
+  constructor(
+    private readonly content: ContentService,
     private readonly auth: AuthService,
     private readonly rewards: RewardsService,
-    private readonly profiles: ProfileService
+    private readonly profiles: ProfileService,
   ) {}
   @Get("lessons") async lessons(
     @Req() request: Request,
@@ -71,6 +83,24 @@ export class ContentController {
     @Body() body: unknown,
   ) {
     return this.rewards.complete(request.user.id, "QUEST", id, body);
+  }
+  @Get("daily-challenge/today") today() {
+    return this.content.today();
+  }
+  @Post("daily-challenge/:id/complete")
+  @HttpCode(200)
+  @UseGuards(SessionGuard)
+  completeDaily(
+    @Req() request: MemberRequest,
+    @Param("id") id: string,
+    @Body() body: unknown,
+  ) {
+    return this.rewards.complete(request.user.id, "DAILY", id, body);
+  }
+  @Get("daily-challenge/:id/progress")
+  @UseGuards(SessionGuard)
+  dailyProgress(@Req() request: MemberRequest, @Param("id") id: string) {
+    return this.content.dailyProgress(request.user.id, id);
   }
   @Get("achievements") achievements() {
     return this.profiles.achievements();

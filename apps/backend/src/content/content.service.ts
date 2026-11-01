@@ -1,9 +1,13 @@
 import { Injectable } from "@nestjs/common";
+import { createHash } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { type LessonDefinition, type QuestDefinition } from "@gitneapig/shared";
+import { type DailyChallengeTemplate, type DailyChallengeDefinition, type LessonDefinition, type QuestDefinition } from "@gitneapig/shared";
+import { dailyTemplates } from "./daily";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
 import { lessonProgress } from "../profile/profile.service";
+import { seoulDateKey } from "../progress/rewards.service";
 @Injectable()
 export class ContentService {
   constructor(private readonly prisma: PrismaService) {}
@@ -135,5 +139,108 @@ export class ContentService {
         "Complete the preceding quest first.",
       );
     return definition;
+  }
+  async today(): Promise<DailyChallengeDefinition> {
+    const dateKey = seoulDateKey();
+    let row = await this.prisma.dailyChallenge.findUnique({
+      where: { dateKey },
+    });
+    if (!row) {
+      const templates = await this.prisma.dailyChallengeTemplate.findMany({
+        where: { active: true },
+        orderBy: { templateKey: "asc" },
+      });
+      if (!templates.length)
+        throw new ApiError(
+          503,
+          "CONTENT_UNAVAILABLE",
+          "Daily challenges are not seeded.",
+        );
+      const selected =
+        templates[
+          createHash("sha256").update(dateKey).digest().readUInt32BE(0) %
+            templates.length
+        ];
+      const {
+        title,
+        description,
+        difficulty,
+        topic,
+        initialState,
+        successConditions,
+        hints,
+        xpReward,
+      } = selected.content as unknown as DailyChallengeTemplate;
+      const definition = {
+        title,
+        description,
+        difficulty,
+        topic,
+        initialState,
+        successConditions,
+        hints,
+        xpReward,
+      };
+      try {
+        row = await this.prisma.dailyChallenge.create({
+          data: {
+            dateKey,
+            xpReward: selected.xpReward,
+            content: definition as unknown as Prisma.InputJsonValue,
+          },
+        });
+      } catch (error) {
+        if (
+          !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+          error.code !== "P2002"
+        )
+          throw error;
+        row = await this.prisma.dailyChallenge.findUniqueOrThrow({
+          where: { dateKey },
+        });
+      }
+    }
+    const snapshot = row.content as unknown as Omit<
+      DailyChallengeDefinition,
+      "id" | "dateKey"
+    >;
+    const currentTemplate = dailyTemplates.find(
+      (template) =>
+        template.title.en === snapshot.title.en &&
+        template.topic.en === snapshot.topic.en,
+    );
+    return {
+      ...snapshot,
+      hints: currentTemplate?.hints ?? snapshot.hints,
+      id: row.id,
+      dateKey: row.dateKey,
+      xpReward: row.xpReward,
+    };
+  }
+  async dailyProgress(userId: string, challengeId: string) {
+    const challenge = await this.prisma.dailyChallenge.findUnique({
+      where: { id: z.uuid().parse(challengeId) },
+    });
+    if (!challenge)
+      throw new ApiError(
+        404,
+        "CHALLENGE_NOT_FOUND",
+        "The challenge was not found.",
+      );
+    const progress = await this.prisma.dailyChallengeProgress.findUnique({
+      where: {
+        userId_challengeId_dateKey: {
+          userId,
+          challengeId,
+          dateKey: challenge.dateKey,
+        },
+      },
+    });
+    return {
+      challengeId,
+      dateKey: challenge.dateKey,
+      completed: !!progress,
+      completedAt: progress?.completedAt.toISOString() ?? null,
+    };
   }
 }

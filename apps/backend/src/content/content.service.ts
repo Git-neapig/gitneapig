@@ -2,10 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { type DailyChallengeTemplate, type DailyChallengeDefinition, type LessonDefinition, type QuestDefinition } from "@gitneapig/shared";
+import { referenceRegistry, type DailyChallengeTemplate, type DailyChallengeDefinition, type LessonDefinition, type QuestDefinition, type CommandReferenceDefinition } from "@gitneapig/shared";
 import { dailyTemplates } from "./daily";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
+import { paginationSchema } from "../common/validation";
 import { lessonProgress } from "../profile/profile.service";
 import { seoulDateKey } from "../progress/rewards.service";
 @Injectable()
@@ -242,5 +243,72 @@ export class ContentService {
       completed: !!progress,
       completedAt: progress?.completedAt.toISOString() ?? null,
     };
+  }
+  async reference(query: unknown) {
+    const input = paginationSchema
+      .extend({
+        q: z.string().trim().max(100).default(""),
+        category: z
+          .enum([
+            "SETUP",
+            "INSPECT",
+            "STAGE",
+            "COMMIT",
+            "BRANCH",
+            "MERGE",
+            "REMOTE",
+          ])
+          .optional(),
+        difficulty: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
+        sort: z
+          .enum(["NAME_ASC", "NAME_DESC", "DIFFICULTY_ASC", "DIFFICULTY_DESC"])
+          .default("NAME_ASC"),
+      })
+      .parse(query);
+    const rows = await this.prisma.commandReference.findMany();
+    const rank = { BEGINNER: 0, INTERMEDIATE: 1, ADVANCED: 2 };
+    const items = rows
+      .flatMap((row) => {
+        const core = referenceRegistry.find((command) => command.key === row.key);
+        if (!core) return [];
+        return [{ ...core, id: row.id, difficulty: row.difficulty as keyof typeof rank,
+          searchContent: JSON.stringify([row.whenToUse, core.syntax]),
+        }];
+      })
+      .filter(
+        (item) =>
+          (!input.category || item.category === input.category) &&
+          (!input.difficulty || item.difficulty === input.difficulty) &&
+          `${item.name} ${Object.values(item.shortDescription).join(" ")} ${item.searchContent}`
+            .toLowerCase()
+            .includes(input.q.toLowerCase()),
+      );
+    items.sort((a, b) => {
+      const comparison = input.sort.startsWith("DIFFICULTY")
+        ? rank[a.difficulty] - rank[b.difficulty] ||
+          a.name.localeCompare(b.name)
+        : a.name.localeCompare(b.name);
+      return input.sort.endsWith("DESC") ? -comparison : comparison;
+    });
+    return {
+      items: items
+        .slice((input.page - 1) * input.pageSize, input.page * input.pageSize)
+        .map(({ shortExample: _shortExample, searchContent: _searchContent, ...item }) => item),
+      page: input.page,
+      pageSize: input.pageSize,
+      totalItems: items.length,
+      totalPages: Math.ceil(items.length / input.pageSize),
+    };
+  }
+  async referenceDetail(key: string) {
+    const core = referenceRegistry.find((c) => c.key === key),
+      row = await this.prisma.commandReference.findUnique({ where: { key } });
+    if (!core || !row)
+      throw new ApiError(
+        404,
+        "COMMAND_NOT_FOUND",
+        "The command was not found.",
+      );
+    return { core, reference: row as unknown as CommandReferenceDefinition };
   }
 }

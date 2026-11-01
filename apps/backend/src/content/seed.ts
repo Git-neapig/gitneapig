@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { lessons } from "./lessons";
+import { quests } from "./quests";
 import { achievements } from "./achievements";
 export const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -15,6 +16,19 @@ export async function seedContent(prisma: PrismaClient): Promise<void> {
           content: json(content),
         };
         await tx.lesson.upsert({
+          where: { id: content.id },
+          create: { id: content.id, ...data },
+          update: data,
+        });
+      }
+      for (const content of quests) {
+        const data = {
+          slug: content.slug,
+          order: content.order,
+          xpReward: content.xpReward,
+          content: json(content),
+        };
+        await tx.quest.upsert({
           where: { id: content.id },
           create: { id: content.id, ...data },
           update: data,

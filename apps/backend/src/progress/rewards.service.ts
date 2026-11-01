@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { AchievementRule, CompletionResponse } from "@gitneapig/shared";
+import type { AchievementRule, CompletionResponse, QuestDefinition } from "@gitneapig/shared";
 import { z } from "zod";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
@@ -31,7 +31,7 @@ export class RewardsService {
   constructor(private readonly prisma: PrismaService) {}
   async complete(
     userId: string,
-    kind: "LESSON",
+    kind: "LESSON" | "QUEST",
     rawId: string,
     body: unknown,
   ): Promise<CompletionResponse> {
@@ -43,7 +43,7 @@ export class RewardsService {
     return this.prisma.serializable(async (tx) => {
       const user = await tx.user.findUniqueOrThrow({ where: { id: userId } });
       let reward: number;
-      {
+      if (kind === "LESSON") {
         const lesson = await tx.lesson.findUnique({ where: { id } });
         if (!lesson)
           throw new ApiError(
@@ -72,6 +72,43 @@ export class RewardsService {
           },
         });
         reward = lesson.xpReward;
+      } else {
+        const quest = await tx.quest.findUnique({ where: { id } });
+        if (!quest)
+          throw new ApiError(
+            404,
+            "QUEST_NOT_FOUND",
+            "The quest was not found.",
+          );
+        const previous = await tx.questProgress.findUnique({
+          where: { userId_questId: { userId, questId: id } },
+        });
+        if (previous?.completedAt && previous.xpAwarded)
+          return { completed: true, firstCompletion: false, xpAwarded: 0 };
+        const prerequisite = (quest.content as unknown as QuestDefinition)
+          .unlockRule.prerequisiteQuestId;
+        if (
+          prerequisite &&
+          !(
+            await tx.questProgress.findUnique({
+              where: { userId_questId: { userId, questId: prerequisite } },
+            })
+          )?.completedAt
+        )
+          throw new ApiError(
+            403,
+            "QUEST_LOCKED",
+            "Complete the preceding quest first.",
+          );
+        await tx.questProgress.upsert({
+          where: { userId_questId: { userId, questId: id } },
+          create: { userId, questId: id, completedAt: now, xpAwarded: true },
+          update: {
+            completedAt: previous?.completedAt ?? now,
+            xpAwarded: true,
+          },
+        });
+        reward = quest.xpReward;
       }
       const streak = nextStreak(user, dateKey);
       const [lessonCount, questCount, dailyCount, achievements, unlocked] =

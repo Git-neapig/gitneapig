@@ -1,6 +1,12 @@
 import type { Difficulty, LocalizedText } from "./index";
-import type { CommandCategory, CommandKey, RepositoryState, SimulatorCondition, SimulatorEvent, RemoteCommitSpec } from "./simulator";
-
+import type {
+  CommandCategory,
+  CommandKey,
+  RepositoryState,
+  SimulatorCondition,
+  SimulatorEvent,
+  RemoteCommitSpec,
+} from "./simulator";
 export type CommandExample = {
   command: string;
   description: LocalizedText;
@@ -20,6 +26,55 @@ export type CommandGuideItem = Omit<
   CommandCoreDefinition,
   "simulatorSupported"
 >;
+export type CommandReferenceDefinition = {
+  id: string;
+  key: ReferenceCommandKey;
+  difficulty: Difficulty;
+  whenToUse: LocalizedText;
+  examples: CommandExample[];
+  commonMistakes: LocalizedText[];
+  relatedCommandKeys: ReferenceCommandKey[];
+  relatedLessonIds: string[];
+  relatedQuestIds: string[];
+};
+export type ReferenceCommandKey =
+  | CommandKey
+  | "init"
+  | "clone"
+  | "config"
+  | "remote"
+  | "restore"
+  | "rm"
+  | "mv"
+  | "stash"
+  | "tag"
+  | "show"
+  | "revert"
+  | "reset"
+  | "rebase"
+  | "cherry-pick"
+  | "reflog"
+  | "bisect"
+  | "worktree"
+  | "clean";
+export type ReferenceCoreDefinition = Omit<CommandCoreDefinition, "key"> & {
+  key: ReferenceCommandKey;
+};
+export type ReferenceOption = {
+  flag: string;
+  effect: LocalizedText;
+  example: string;
+  caution: LocalizedText;
+};
+export type CommandReferenceDetail = {
+  core: ReferenceCoreDefinition;
+  reference: CommandReferenceDefinition;
+  options: ReferenceOption[];
+};
+export type CommandReferenceListItem = Omit<
+  ReferenceCoreDefinition,
+  "shortExample"
+> & { id: string; difficulty: Difficulty };
 export type TeamMessage = {
   id: string;
   teammateId?: string;

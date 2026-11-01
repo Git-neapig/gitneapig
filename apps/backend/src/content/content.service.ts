@@ -280,7 +280,7 @@ export class ContentService {
         const core = referenceRegistry.find((command) => command.key === row.key);
         if (!core) return [];
         return [{ ...core, id: row.id, difficulty: row.difficulty as keyof typeof rank,
-          searchContent: JSON.stringify([row.whenToUse, (referenceOptions[core.key] ?? []), core.syntax]),
+          searchContent: JSON.stringify([row.whenToUse, referenceOptions[core.key], core.syntax]),
         }];
       })
       .filter(
@@ -317,6 +317,6 @@ export class ContentService {
         "COMMAND_NOT_FOUND",
         "The command was not found.",
       );
-    return { core, reference: row as unknown as CommandReferenceDefinition, options: (referenceOptions[core.key] ?? []) };
+    return { core, reference: row as unknown as CommandReferenceDefinition, options: referenceOptions[core.key] };
   }
 }

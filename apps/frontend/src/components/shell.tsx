@@ -11,6 +11,7 @@ const navigation = [
   ["/learn", "learn"],
   ["/practice", "practice"],
   ["/quests", "quests"],
+  ["/daily-challenge", "daily"],
 ];
 export function Shell() {
   const { t, language } = useLocale(),

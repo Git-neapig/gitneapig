@@ -53,6 +53,25 @@ export class ContentController {
   ) {
     return this.rewards.complete(request.user.id, "LESSON", id, body);
   }
+  @Get("quests") async quests(@Req() request: Request) {
+    return this.content.quests((await this.auth.user(request, true))?.id);
+  }
+  @Get("quests/:slug") async quest(
+    @Param("slug") slug: string,
+    @Req() request: Request,
+  ) {
+    return this.content.quest(slug, (await this.auth.user(request, true))?.id);
+  }
+  @Post("quests/:id/complete")
+  @HttpCode(200)
+  @UseGuards(SessionGuard)
+  completeQuest(
+    @Req() request: MemberRequest,
+    @Param("id") id: string,
+    @Body() body: unknown,
+  ) {
+    return this.rewards.complete(request.user.id, "QUEST", id, body);
+  }
   @Get("achievements") achievements() {
     return this.profiles.achievements();
   }

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { z } from "zod";
-import { type LessonDefinition } from "@gitneapig/shared";
+import { type LessonDefinition, type QuestDefinition } from "@gitneapig/shared";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
 import { lessonProgress } from "../profile/profile.service";
@@ -82,5 +82,58 @@ export class ContentService {
       });
       return lessonProgress(lesson, progress);
     });
+  }
+  async quests(userId?: string) {
+    const rows = await this.prisma.quest.findMany({
+      orderBy: { order: "asc" },
+      include: {
+        progress: {
+          where: { userId: userId ?? "00000000-0000-0000-0000-000000000000" },
+        },
+      },
+    });
+    const completed = new Set(
+      rows.filter((r) => r.progress[0]?.completedAt).map((r) => r.id),
+    );
+    return {
+      items: rows.map((row) => {
+        const definition = row.content as unknown as QuestDefinition;
+        return {
+          id: row.id,
+          slug: row.slug,
+          order: row.order,
+          title: definition.title,
+          summary: definition.summary,
+          xpReward: row.xpReward,
+          unlockRule: definition.unlockRule,
+          completed: completed.has(row.id),
+          available:
+            !definition.unlockRule.prerequisiteQuestId ||
+            completed.has(definition.unlockRule.prerequisiteQuestId),
+        };
+      }),
+    };
+  }
+  async quest(slug: string, userId?: string) {
+    const row = await this.prisma.quest.findUnique({ where: { slug } });
+    if (!row)
+      throw new ApiError(404, "QUEST_NOT_FOUND", "The quest was not found.");
+    const definition = row.content as unknown as QuestDefinition,
+      prerequisite = definition.unlockRule.prerequisiteQuestId;
+    if (
+      userId &&
+      prerequisite &&
+      !(
+        await this.prisma.questProgress.findUnique({
+          where: { userId_questId: { userId, questId: prerequisite } },
+        })
+      )?.completedAt
+    )
+      throw new ApiError(
+        403,
+        "QUEST_LOCKED",
+        "Complete the preceding quest first.",
+      );
+    return definition;
   }
 }

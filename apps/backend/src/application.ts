@@ -16,6 +16,7 @@ import { SessionGuard } from "./auth/session.guard";
 import { ProfileService } from "./profile/profile.service";
 import { ContentService } from "./content/content.service";
 import { ContentController } from "./content/content.controller";
+import { ReferenceController } from "./content/reference.controller";
 import { RewardsService } from "./progress/rewards.service";
 
 export function originAllowed(
@@ -47,6 +48,7 @@ export class ApplicationModule {
         HealthController,
         AuthController,
         ContentController,
+        ReferenceController,
       ],
       providers: [
         { provide: "CONFIG", useValue: config },

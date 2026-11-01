@@ -3,6 +3,7 @@ import { lessons } from "./lessons";
 import { quests } from "./quests";
 import { dailyTemplates } from "./daily";
 import { achievements } from "./achievements";
+import { references } from "./reference";
 export const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 export async function seedContent(prisma: PrismaClient): Promise<void> {
@@ -58,6 +59,23 @@ export async function seedContent(prisma: PrismaClient): Promise<void> {
           content: json(content),
         };
         await tx.achievement.upsert({
+          where: { id: content.id },
+          create: { id: content.id, ...data },
+          update: data,
+        });
+      }
+      for (const content of references) {
+        const data = {
+          key: content.key,
+          difficulty: content.difficulty,
+          whenToUse: json(content.whenToUse),
+          examples: json(content.examples),
+          commonMistakes: json(content.commonMistakes),
+          relatedCommandKeys: json(content.relatedCommandKeys),
+          relatedLessonIds: json(content.relatedLessonIds),
+          relatedQuestIds: json(content.relatedQuestIds),
+        };
+        await tx.commandReference.upsert({
           where: { id: content.id },
           create: { id: content.id, ...data },
           update: data,

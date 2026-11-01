@@ -10,6 +10,7 @@ export const accountLinks: string[][] = [];
 const navigation = [
   ["/learn", "learn"],
   ["/practice", "practice"],
+  ["/quests", "quests"],
 ];
 export function Shell() {
   const { t, language } = useLocale(),

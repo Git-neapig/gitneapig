@@ -21,7 +21,7 @@ import { AvatarStorage } from "./profile/avatar.storage";
 import { ProfileService } from "./profile/profile.service";
 import { ProfileController } from "./profile/profile.controller";
 import { ApiKeysController } from "./profile/api-keys.controller";
-import { ApiKeysService } from "./profile/api-keys.service";
+import { ApiKeyGuard, ApiKeysService } from "./profile/api-keys.service";
 import { FriendsService } from "./social/friends.service";
 import { BookmarksService } from "./social/bookmarks.service";
 import { SocialController } from "./social/social.controller";
@@ -30,6 +30,7 @@ import { ContentService } from "./content/content.service";
 import { ContentController } from "./content/content.controller";
 import { ReferenceController } from "./content/reference.controller";
 import { RewardsService } from "./progress/rewards.service";
+import { PublicBookmarksController } from "./public-api/bookmarks.controller";
 
 export function originAllowed(
   method: string,
@@ -65,6 +66,7 @@ export class ApplicationModule {
         BookmarksController,
         ContentController,
         ReferenceController,
+        PublicBookmarksController,
       ],
       providers: [
         { provide: "CONFIG", useValue: config },
@@ -74,6 +76,7 @@ export class ApplicationModule {
         AvatarStorage,
         ProfileService,
         ApiKeysService,
+        ApiKeyGuard,
         FriendsService,
         BookmarksService,
         ContentService,

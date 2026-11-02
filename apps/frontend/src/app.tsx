@@ -11,6 +11,7 @@ import { AccountLayout } from "./features/account/account-layout";
 import { AchievementsPage } from "./pages/achievements";
 import { EditProfilePage } from "./pages/edit-profile";
 import { ProfilePage } from "./pages/profile";
+import { ApiKeysPage } from "./pages/api-keys";
 import { FriendsPage } from "./pages/friends";
 import { BookmarksPage } from "./pages/bookmarks";
 import { ReferenceDetailPage, ReferencePage } from "./pages/reference";
@@ -54,7 +55,7 @@ export function App() {
             <Route path="profile" element={<ProfilePage />} />
             <Route path="profile/edit" element={<EditProfilePage />} />
             <Route path="profile/achievements" element={<AchievementsPage />} />
-            
+            <Route path="profile/api-keys" element={<ApiKeysPage />} />
             <Route path="friends" element={<FriendsPage />} />
             <Route path="bookmarks" element={<BookmarksPage />} />
           </Route>

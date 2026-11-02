@@ -12,6 +12,7 @@ export const accountLinks = [
   ["/friends", "friends"],
   ["/bookmarks", "bookmarks"],
   ["/profile/achievements", "achievements"],
+  ["/profile/api-keys", "bookmarkIntegration"],
 ];
 const navigation = [
   ["/learn", "learn"],

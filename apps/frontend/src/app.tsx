@@ -8,8 +8,10 @@ import { QuestPage, QuestsPage } from "./pages/quests";
 import { DailyPage } from "./pages/daily";
 import { AuthPage } from "./pages/auth";
 import { AccountLayout } from "./features/account/account-layout";
+import { AchievementsPage } from "./pages/achievements";
 import { EditProfilePage } from "./pages/edit-profile";
 import { ProfilePage } from "./pages/profile";
+import { BookmarksPage } from "./pages/bookmarks";
 import { ReferenceDetailPage, ReferencePage } from "./pages/reference";
 import { useLocale } from "./lib/i18n";
 import { SessionProvider } from "./lib/session";
@@ -50,10 +52,10 @@ export function App() {
           >
             <Route path="profile" element={<ProfilePage />} />
             <Route path="profile/edit" element={<EditProfilePage />} />
+            <Route path="profile/achievements" element={<AchievementsPage />} />
             
             
-            
-            
+            <Route path="bookmarks" element={<BookmarksPage />} />
           </Route>
           <Route
             path="reference"

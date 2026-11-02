@@ -1,6 +1,9 @@
 import type { Language, LocalizedText } from "./index";
-import type { LessonProgressSummary, AchievementSummary, LessonStageType } from "./content";
-
+import type {
+  LessonProgressSummary,
+  AchievementSummary,
+  LessonStageType,
+} from "./content";
 export type CurrentUser = {
   id: string;
   email: string | null;
@@ -62,6 +65,13 @@ export type CreateBookmarkRequest = Pick<
   Bookmark,
   "targetType" | "targetId"
 > & { stage?: LessonStageType | null };
+export type ApiKeySummary = {
+  id: string;
+  label: string;
+  createdAt: string;
+  revokedAt: string | null;
+};
+export type CreateApiKeyResponse = { apiKey: string; record: ApiKeySummary };
 export type FriendRequest = {
   id: string;
   sender: PublicUserSummary;

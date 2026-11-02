@@ -1,5 +1,5 @@
-import type { Language } from "./index";
-import type { LessonStageType } from "./content";
+import type { Language, LocalizedText } from "./index";
+import type { LessonProgressSummary, AchievementSummary, LessonStageType } from "./content";
 
 export type CurrentUser = {
   id: string;
@@ -24,6 +24,11 @@ export type SignUpRequest = {
   avatarPresetKey?: string;
 };
 export type LoginRequest = Pick<SignUpRequest, "email" | "password">;
+export type UpdateProfileRequest = {
+  nickname?: string;
+  language?: Language;
+  avatarPresetKey?: string;
+};
 export type CompletionRequest = { contentVersion?: string };
 export type CompletionResponse = {
   completed: boolean;
@@ -57,3 +62,27 @@ export type CreateBookmarkRequest = Pick<
   Bookmark,
   "targetType" | "targetId"
 > & { stage?: LessonStageType | null };
+export type ActivityItem = {
+  id: string;
+  type:
+    | "LESSON_COMPLETED"
+    | "QUEST_COMPLETED"
+    | "DAILY_CHALLENGE_COMPLETED"
+    | "ACHIEVEMENT_UNLOCKED";
+  title: LocalizedText;
+  xpDelta?: number;
+  occurredAt: string;
+  targetPath?: string;
+};
+export type UserProfileResponse = {
+  user: CurrentUser;
+  stats: {
+    lessonsDone: number;
+    questsDone: number;
+    totalXp: number;
+    streak: number;
+  };
+  lessonProgress: LessonProgressSummary[];
+  recentAchievements: AchievementSummary[];
+  recentActivity: ActivityItem[];
+};

@@ -7,6 +7,9 @@ import { LearnPage, LessonPage } from "./pages/learn";
 import { QuestPage, QuestsPage } from "./pages/quests";
 import { DailyPage } from "./pages/daily";
 import { AuthPage } from "./pages/auth";
+import { AccountLayout } from "./features/account/account-layout";
+import { EditProfilePage } from "./pages/edit-profile";
+import { ProfilePage } from "./pages/profile";
 import { ReferenceDetailPage, ReferencePage } from "./pages/reference";
 import { useLocale } from "./lib/i18n";
 import { SessionProvider } from "./lib/session";
@@ -38,7 +41,20 @@ export function App() {
           <Route path="login" element={<AuthPage />} />
           <Route path="signup" element={<AuthPage signup />} />
           
-          
+          <Route
+            element={
+              <MemberGate>
+                <AccountLayout />
+              </MemberGate>
+            }
+          >
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="profile/edit" element={<EditProfilePage />} />
+            
+            
+            
+            
+          </Route>
           <Route
             path="reference"
             element={

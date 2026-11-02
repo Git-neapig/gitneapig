@@ -6,7 +6,10 @@ import { useLocale } from "../lib/i18n";
 import { useSession } from "../lib/session";
 import { Avatar, IconButton } from "./ui";
 import { Failure, Loading } from "./feedback";
-export const accountLinks: string[][] = [];
+export const accountLinks = [
+  ["/profile", "profile"],
+  ["/profile/edit", "settings"],
+];
 const navigation = [
   ["/learn", "learn"],
   ["/practice", "practice"],

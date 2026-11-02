@@ -1,11 +1,13 @@
 import { Route, Routes, Link } from "react-router-dom";
 import { Shell } from "./components/shell";
-
+import { MemberGate } from "./components/feedback";
 import { PracticePage } from "./pages/practice";
+import "./styles/reference-final.css";
 import { LearnPage, LessonPage } from "./pages/learn";
 import { QuestPage, QuestsPage } from "./pages/quests";
 import { DailyPage } from "./pages/daily";
 import { AuthPage } from "./pages/auth";
+import { ReferenceDetailPage, ReferencePage } from "./pages/reference";
 import { useLocale } from "./lib/i18n";
 import { SessionProvider } from "./lib/session";
 import "./styles/app.css";
@@ -37,8 +39,22 @@ export function App() {
           <Route path="signup" element={<AuthPage signup />} />
           
           
-          
-          
+          <Route
+            path="reference"
+            element={
+              <MemberGate>
+                <ReferencePage />
+              </MemberGate>
+            }
+          />
+          <Route
+            path="reference/:key"
+            element={
+              <MemberGate>
+                <ReferenceDetailPage />
+              </MemberGate>
+            }
+          />
           
           
           <Route path="*" element={<NotFound />} />

@@ -1,0 +1,41 @@
+.integration-intro {
+  max-width: 960px;
+  margin: 24px 0;
+}
+.integration-guide {
+  border-top: 1px solid var(--color-border);
+  margin-top: 32px;
+  padding-top: 24px;
+}
+.integration-guide pre {
+  padding: 16px;
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+.key-create {
+  margin-bottom: 32px;
+}
+.command-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.command-copy pre {
+  flex: 1;
+  min-width: 0;
+}
+.command-copy button {
+  flex-shrink: 0;
+}
+.reference-detail section > div + div {
+  margin-top: 24px;
+}
+.reference-detail section > div > p {
+  margin-block: 12px;
+  line-height: 1.7;
+}
+.reference-detail > a {
+  margin-right: 16px;
+  margin-top: 16px;
+}

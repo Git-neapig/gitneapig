@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { Copy, FilePlus2, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import {
   commandRegistry,
@@ -240,6 +241,9 @@ function CommandGuide({
                 </p>
               </>
             ) : null}
+            <Link className="text-link" to={`/reference/${command.key}`}>
+              {t("reference")}
+            </Link>
           </section>
         ))}
     </div>

@@ -103,6 +103,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } catch {
       /* Preference storage is optional. */
     }
+    if (user) {
+      const result = await api<AuthResponse>("/profile", {
+        method: "PATCH",
+        body: { language },
+      });
+      updateUser(result.user);
+    }
   }
   return (
     <Context.Provider

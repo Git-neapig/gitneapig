@@ -7,7 +7,7 @@ import { LearnPage, LessonPage } from "./pages/learn";
 import { QuestPage, QuestsPage } from "./pages/quests";
 import { DailyPage } from "./pages/daily";
 import { AuthPage } from "./pages/auth";
-import { ReferencePage } from "./pages/reference";
+import { ReferenceDetailPage, ReferencePage } from "./pages/reference";
 import { useLocale } from "./lib/i18n";
 import { SessionProvider } from "./lib/session";
 import "./styles/app.css";
@@ -44,6 +44,14 @@ export function App() {
             element={
               <MemberGate>
                 <ReferencePage />
+              </MemberGate>
+            }
+          />
+          <Route
+            path="reference/:key"
+            element={
+              <MemberGate>
+                <ReferenceDetailPage />
               </MemberGate>
             }
           />

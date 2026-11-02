@@ -28,6 +28,7 @@ import {
   guestCompleted,
   useCompletion,
 } from "../features/learning/completion";
+import { BookmarkButton } from "../features/bookmarks/bookmark-button";
 type LessonItem = LessonSummary & { progress?: LessonProgressSummary };
 export function LearnPage() {
   const { t, text } = useLocale(),
@@ -224,6 +225,11 @@ function LessonRunner({
         ]}
       />
       <div className="lesson-meta actions">
+        <BookmarkButton
+          targetType="LESSON"
+          targetId={lesson.id}
+          stage={stage.type}
+        />
         <Badge tone="primary">{stageIndex + 1} / 6</Badge>
       </div>
       <ol className="lesson-stages">

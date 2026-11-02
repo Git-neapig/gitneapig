@@ -29,6 +29,7 @@ import {
 } from "../features/learning/completion";
 import { ResetButton, Workspace } from "../features/workspace/workspace";
 import type { TerminalEntry } from "../features/workspace/use-simulator";
+import { BookmarkButton } from "../features/bookmarks/bookmark-button";
 import "./quest-daily-final.css";
 type QuestSummary = Pick<
   QuestDefinition,
@@ -341,6 +342,7 @@ function QuestRunner({
         title={text(definition.title)}
         actions={
           <div className="actions">
+            <BookmarkButton targetType="QUEST" targetId={definition.id} />
             <ResetButton reset={reset} />
           </div>
         }

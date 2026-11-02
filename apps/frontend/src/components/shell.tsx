@@ -9,6 +9,7 @@ import { Failure, Loading } from "./feedback";
 export const accountLinks = [
   ["/profile", "profile"],
   ["/profile/edit", "settings"],
+  ["/friends", "friends"],
   ["/bookmarks", "bookmarks"],
   ["/profile/achievements", "achievements"],
 ];

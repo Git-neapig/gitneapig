@@ -16,7 +16,9 @@ import { SessionGuard } from "./auth/session.guard";
 import { AvatarStorage } from "./profile/avatar.storage";
 import { ProfileService } from "./profile/profile.service";
 import { ProfileController } from "./profile/profile.controller";
+import { FriendsService } from "./social/friends.service";
 import { BookmarksService } from "./social/bookmarks.service";
+import { SocialController } from "./social/social.controller";
 import { BookmarksController } from "./social/bookmarks.controller";
 import { ContentService } from "./content/content.service";
 import { ContentController } from "./content/content.controller";
@@ -52,6 +54,7 @@ export class ApplicationModule {
         HealthController,
         AuthController,
         ProfileController,
+        SocialController,
         BookmarksController,
         ContentController,
         ReferenceController,
@@ -63,6 +66,7 @@ export class ApplicationModule {
         SessionGuard,
         AvatarStorage,
         ProfileService,
+        FriendsService,
         BookmarksService,
         ContentService,
         RewardsService,

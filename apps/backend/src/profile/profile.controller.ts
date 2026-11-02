@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiCookieAuth, ApiTags } from "@nestjs/swagger";
 import { SessionGuard, type MemberRequest } from "../auth/session.guard";
@@ -26,5 +36,8 @@ export class ProfileController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.profiles.upload(request.user, file);
+  }
+  @Get("achievements") achievements(@Req() request: MemberRequest) {
+    return this.profiles.achievements(request.user.id);
   }
 }

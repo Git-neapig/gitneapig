@@ -62,6 +62,13 @@ export type CreateBookmarkRequest = Pick<
   Bookmark,
   "targetType" | "targetId"
 > & { stage?: LessonStageType | null };
+export type FriendRequest = {
+  id: string;
+  sender: PublicUserSummary;
+  receiver: PublicUserSummary;
+  status: "PENDING" | "ACCEPTED";
+  createdAt: string;
+};
 export type ActivityItem = {
   id: string;
   type:

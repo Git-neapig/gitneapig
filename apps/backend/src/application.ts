@@ -5,7 +5,11 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import express, { type NextFunction, type Request, type Response } from "express";
+import express, {
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import { resolve } from "node:path";
 import type { Configuration } from "./config";
 import { PrismaService } from "./database/prisma.service";
@@ -16,6 +20,8 @@ import { SessionGuard } from "./auth/session.guard";
 import { AvatarStorage } from "./profile/avatar.storage";
 import { ProfileService } from "./profile/profile.service";
 import { ProfileController } from "./profile/profile.controller";
+import { ApiKeysController } from "./profile/api-keys.controller";
+import { ApiKeyGuard, ApiKeysService } from "./profile/api-keys.service";
 import { FriendsService } from "./social/friends.service";
 import { BookmarksService } from "./social/bookmarks.service";
 import { SocialController } from "./social/social.controller";
@@ -24,6 +30,7 @@ import { ContentService } from "./content/content.service";
 import { ContentController } from "./content/content.controller";
 import { ReferenceController } from "./content/reference.controller";
 import { RewardsService } from "./progress/rewards.service";
+import { PublicBookmarksController } from "./public-api/bookmarks.controller";
 
 export function originAllowed(
   method: string,
@@ -54,10 +61,12 @@ export class ApplicationModule {
         HealthController,
         AuthController,
         ProfileController,
+        ApiKeysController,
         SocialController,
         BookmarksController,
         ContentController,
         ReferenceController,
+        PublicBookmarksController,
       ],
       providers: [
         { provide: "CONFIG", useValue: config },
@@ -66,6 +75,8 @@ export class ApplicationModule {
         SessionGuard,
         AvatarStorage,
         ProfileService,
+        ApiKeysService,
+        ApiKeyGuard,
         FriendsService,
         BookmarksService,
         ContentService,

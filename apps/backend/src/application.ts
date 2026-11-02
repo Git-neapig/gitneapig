@@ -14,6 +14,8 @@ import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
 import { SessionGuard } from "./auth/session.guard";
 import { ProfileService } from "./profile/profile.service";
+import { BookmarksService } from "./social/bookmarks.service";
+import { BookmarksController } from "./social/bookmarks.controller";
 import { ContentService } from "./content/content.service";
 import { ContentController } from "./content/content.controller";
 import { ReferenceController } from "./content/reference.controller";
@@ -47,6 +49,7 @@ export class ApplicationModule {
       controllers: [
         HealthController,
         AuthController,
+        BookmarksController,
         ContentController,
         ReferenceController,
       ],
@@ -56,6 +59,7 @@ export class ApplicationModule {
         AuthService,
         SessionGuard,
         ProfileService,
+        BookmarksService,
         ContentService,
         RewardsService,
       ],

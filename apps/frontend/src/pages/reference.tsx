@@ -1,11 +1,24 @@
 import { useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, Copy, Check } from "lucide-react";
-import type { CommandReferenceDetail, CommandReferenceListItem, LessonSummary, PaginatedResponse, QuestDefinition } from "@gitneapig/shared";
+import type {
+  CommandReferenceDetail,
+  CommandReferenceListItem,
+  LessonSummary,
+  PaginatedResponse,
+  QuestDefinition,
+} from "@gitneapig/shared";
 import { useResource } from "../lib/api";
-
+import { BookmarkButton } from "../features/bookmarks/bookmark-button";
 import { useLocale } from "../lib/i18n";
-import { Badge, Breadcrumb, IconButton, Pagination, SearchInput, Select } from "../components/ui";
+import {
+  Badge,
+  Breadcrumb,
+  IconButton,
+  Pagination,
+  SearchInput,
+  Select,
+} from "../components/ui";
 import { Failure, Loading, PageHeading } from "../components/feedback";
 export function ReferencePage() {
   const { t, text } = useLocale(),
@@ -134,7 +147,7 @@ export function ReferencePage() {
                   <span className="muted">{t(command.category)}</span>
                 </Link>
                 <div className="reference-card-bookmark">
-                  
+                  <BookmarkButton targetType="COMMAND" targetId={command.id} />
                 </div>
               </article>
             ))}
@@ -201,7 +214,7 @@ export function ReferenceDetailPage() {
         >
           {t(reference.difficulty)}
         </Badge>
-        
+        <BookmarkButton targetType="COMMAND" targetId={reference.id} />
       </div>
       <p className="muted">{t(core.category)}</p>
       <p>{text(core.shortDescription)}</p>

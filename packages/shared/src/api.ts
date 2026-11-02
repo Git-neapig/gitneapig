@@ -1,4 +1,5 @@
 import type { Language } from "./index";
+import type { LessonStageType } from "./content";
 
 export type CurrentUser = {
   id: string;
@@ -44,3 +45,15 @@ export type PaginatedResponse<T> = {
   totalItems: number;
   totalPages: number;
 };
+export type BookmarkTargetType = "LESSON" | "QUEST" | "COMMAND";
+export type Bookmark = {
+  id: string;
+  targetType: BookmarkTargetType;
+  targetId: string;
+  stage: LessonStageType | null;
+  createdAt: string;
+};
+export type CreateBookmarkRequest = Pick<
+  Bookmark,
+  "targetType" | "targetId"
+> & { stage?: LessonStageType | null };

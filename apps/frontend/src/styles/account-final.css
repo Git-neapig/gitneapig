@@ -1,0 +1,66 @@
+.account-layout .account-navigation {
+  position: sticky;
+  top: var(--app-header-height);
+  z-index: 15;
+  background: var(--color-bg);
+}
+.account-content :is(a, button, input, select, textarea) {
+  scroll-margin-top: calc(var(--app-header-height) + 68px);
+}
+.bookmark-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.bookmark-categories [aria-pressed="true"] {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.account-content .bookmark-list {
+  display: grid;
+  gap: 12px;
+}
+.account-content .bookmark-row {
+  padding: 16px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-1);
+}
+.account-content .bookmark-row a {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  min-width: 0;
+}
+.account-content .bookmark-row a > svg {
+  flex-shrink: 0;
+}
+.account-content .bookmark-row strong,
+.account-content .bookmark-row small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.account-content .bookmark-row small {
+  margin-top: 4px;
+}
+.account-content .bookmark-row .icon-button {
+  color: var(--color-primary);
+}
+@media (max-width: 600px) {
+  .account-content .bookmark-row {
+    padding: 12px;
+    gap: 8px;
+  }
+  .account-content .bookmark-row a {
+    gap: 10px;
+  }
+  .account-content .bookmark-row > svg {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .account-layout .profile-heading > div {
+    flex-basis: calc(100% - 96px);
+  }
+}

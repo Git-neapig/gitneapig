@@ -1,4 +1,16 @@
-import { Body, Controller, Get, HttpCode, Post, Query, Req, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Query,
+  Req,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { AuthService, currentUser } from "./auth.service";
@@ -37,5 +49,19 @@ export class AuthController {
     @Res() response: Response,
   ) {
     return this.auth.oauthCallback(request, response);
+  }
+  @Post("42/onboarding")
+  @UseInterceptors(
+    FileInterceptor("avatar", {
+      limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 2 },
+    }),
+  )
+  onboard(
+    @Req() request: Request,
+    @Res() response: Response,
+    @Body() body: unknown,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.auth.onboard(request, response, body, file);
   }
 }

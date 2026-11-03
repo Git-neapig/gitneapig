@@ -6,7 +6,7 @@ import "./styles/reference-final.css";
 import { LearnPage, LessonPage } from "./pages/learn";
 import { QuestPage, QuestsPage } from "./pages/quests";
 import { DailyPage } from "./pages/daily";
-import { AuthPage } from "./pages/auth";
+import { AuthPage, OnboardingPage } from "./pages/auth";
 import { AccountLayout } from "./features/account/account-layout";
 import { AchievementsPage } from "./pages/achievements";
 import { EditProfilePage } from "./pages/edit-profile";
@@ -44,7 +44,7 @@ export function App() {
           <Route path="daily-challenge" element={<DailyPage />} />
           <Route path="login" element={<AuthPage />} />
           <Route path="signup" element={<AuthPage signup />} />
-          
+          <Route path="onboarding/profile" element={<OnboardingPage />} />
           <Route
             element={
               <MemberGate>

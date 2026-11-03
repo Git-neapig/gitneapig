@@ -4,7 +4,12 @@ import type { AuthResponse } from "@gitneapig/shared";
 import { api, ApiClientError } from "../lib/api";
 import { useLocale } from "../lib/i18n";
 import { safePath, useSession } from "../lib/session";
-import { Alert, Button, PasswordInput, TextInput } from "../components/ui";
+import {
+  Alert,
+  Button,
+  PasswordInput,
+  TextInput,
+} from "../components/ui";
 import { Failure } from "../components/feedback";
 import { AvatarPicker } from "../features/account/avatar-picker";
 export function AuthPage({ signup = false }: { signup?: boolean }) {
@@ -128,6 +133,10 @@ export function AuthPage({ signup = false }: { signup?: boolean }) {
           {t(signup ? "login" : "signup")}
         </Link>
       </p>
+      <div className="policy-links">
+        <Link to="/privacy">{t("privacy")}</Link>
+        <Link to="/terms">{t("terms")}</Link>
+      </div>
     </section>
   );
 }

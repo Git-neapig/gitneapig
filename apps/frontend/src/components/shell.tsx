@@ -223,6 +223,19 @@ export function Shell() {
       >
         {session.loading ? <Loading /> : <Outlet />}
       </main>
+      {location.pathname !== "/" ? <Footer /> : null}
     </>
+  );
+}
+export function Footer() {
+  const { t } = useLocale();
+  return (
+    <footer className="footer">
+      <span>GitneaPig</span>
+      <nav>
+        <Link to="/privacy">{t("privacy")}</Link>
+        <Link to="/terms">{t("terms")}</Link>
+      </nav>
+    </footer>
   );
 }

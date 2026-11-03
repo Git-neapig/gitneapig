@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, Terminal, GitPullRequest, CalendarCheck, ArrowDown } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Terminal,
+  GitPullRequest,
+  CalendarCheck,
+  ArrowDown,
+} from "lucide-react";
 import { useLocale } from "../lib/i18n";
-
+import { Footer } from "../components/shell";
 const sequence = [
   ["$ git status", "On branch main"],
   [
@@ -176,6 +183,7 @@ export function HomePage() {
             ))}
           </div>
         </div>
+        <Footer />
       </section>
     </div>
   );

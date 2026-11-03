@@ -16,6 +16,7 @@ import { ApiKeysPage } from "./pages/api-keys";
 import { FriendsPage } from "./pages/friends";
 import { BookmarksPage } from "./pages/bookmarks";
 import { ReferenceDetailPage, ReferencePage } from "./pages/reference";
+import { PolicyPage } from "./pages/policies";
 import { useLocale } from "./lib/i18n";
 import { SessionProvider } from "./lib/session";
 import "./styles/app.css";
@@ -76,8 +77,8 @@ export function App() {
               </MemberGate>
             }
           />
-          
-          
+          <Route path="privacy" element={<PolicyPage type="privacy" />} />
+          <Route path="terms" element={<PolicyPage type="terms" />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

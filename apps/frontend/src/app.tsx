@@ -1,6 +1,7 @@
 import { Route, Routes, Link } from "react-router-dom";
 import { Shell } from "./components/shell";
 import { MemberGate } from "./components/feedback";
+import { HomePage } from "./pages/home";
 import { PracticePage } from "./pages/practice";
 import "./styles/reference-final.css";
 import { LearnPage, LessonPage } from "./pages/learn";
@@ -35,7 +36,7 @@ export function App() {
     <SessionProvider>
       <Routes>
         <Route element={<Shell />}>
-          
+          <Route index element={<HomePage />} />
           <Route path="learn" element={<LearnPage />} />
           <Route path="learn/:slug" element={<LessonPage />} />
           <Route path="practice" element={<PracticePage />} />

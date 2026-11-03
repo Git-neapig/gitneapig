@@ -3,12 +3,13 @@ import { Prisma, type User } from "@prisma/client";
 import { calculateLevel, type CurrentUser, type Language, type PublicUserSummary } from "@gitneapig/shared";
 import { hash, verify, argon2id } from "argon2";
 import jwt from "jsonwebtoken";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import type { Configuration } from "../config";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
-import { loginSchema, normalizeIdentity, signupSchema } from "../common/validation";
+import { loginSchema, normalizeIdentity, safeReturnTo, signupSchema } from "../common/validation";
 
 export function currentUser(user: User): CurrentUser {
   return {
@@ -187,5 +188,110 @@ export class AuthService {
     });
     this.session(response, active);
     return { user: currentUser(active) };
+  }
+  oauthStart(returnTo: unknown, response: Response): void {
+    if (
+      !this.config.OAUTH_42_CLIENT_ID ||
+      !this.config.OAUTH_42_CLIENT_SECRET ||
+      !this.config.OAUTH_42_REDIRECT_URI
+    ) {
+      response.redirect(
+        302,
+        `/login?oauthError=unavailable&returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`,
+      );
+      return;
+    }
+    const state = randomBytes(32).toString("base64url");
+    response.cookie(
+      "gitneapig_oauth_state",
+      this.signed(
+        { state, returnTo: safeReturnTo(returnTo) },
+        "oauth-state",
+        600,
+      ),
+      this.cookieOptions(600_000),
+    );
+    const url = new URL("https://api.intra.42.fr/oauth/authorize");
+    url.search = new URLSearchParams({
+      client_id: this.config.OAUTH_42_CLIENT_ID,
+      redirect_uri: this.config.OAUTH_42_REDIRECT_URI,
+      response_type: "code",
+      scope: "public",
+      state,
+    }).toString();
+    response.redirect(302, url.toString());
+  }
+  async oauthCallback(request: Request, response: Response): Promise<void> {
+    response.clearCookie("gitneapig_oauth_state", this.cookieOptions());
+    try {
+      const state = this.verified(
+        (request.cookies as Record<string, unknown>).gitneapig_oauth_state,
+        "oauth-state",
+      );
+      const query = z
+        .object({
+          code: z.string().min(1).max(2048),
+          state: z.string().min(1).max(128),
+        })
+        .parse(request.query);
+      if (
+        request.query.error ||
+        typeof state.state !== "string" ||
+        query.state.length !== state.state.length ||
+        !timingSafeEqual(Buffer.from(query.state), Buffer.from(state.state))
+      )
+        throw new Error("OAuth state rejected");
+      if (
+        !this.config.OAUTH_42_CLIENT_ID ||
+        !this.config.OAUTH_42_CLIENT_SECRET ||
+        !this.config.OAUTH_42_REDIRECT_URI
+      )
+        throw new Error("OAuth not configured");
+      const exchange = await fetch("https://api.intra.42.fr/oauth/token", {
+        method: "POST",
+        signal: AbortSignal.timeout(10000),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grant_type: "authorization_code",
+          client_id: this.config.OAUTH_42_CLIENT_ID,
+          client_secret: this.config.OAUTH_42_CLIENT_SECRET,
+          code: query.code,
+          redirect_uri: this.config.OAUTH_42_REDIRECT_URI,
+        }),
+      });
+      if (!exchange.ok) throw new Error("OAuth exchange rejected");
+      const token = z
+        .object({ access_token: z.string().min(1) })
+        .parse(await exchange.json());
+      const identityResponse = await fetch("https://api.intra.42.fr/v2/me", {
+        signal: AbortSignal.timeout(10000),
+        headers: { Authorization: `Bearer ${token.access_token}` },
+      });
+      if (!identityResponse.ok) throw new Error("OAuth identity rejected");
+      const identity = z
+          .object({ id: z.number().int().positive() })
+          .parse(await identityResponse.json()),
+        subject = String(identity.id);
+      const user = await this.prisma.user.findUnique({
+        where: { oauth42Subject: subject },
+      });
+      if (user) {
+        this.session(response, user);
+        response.redirect(302, safeReturnTo(state.returnTo));
+      } else {
+        response.cookie(
+          "gitneapig_onboarding",
+          this.signed(
+            { sub: subject, returnTo: safeReturnTo(state.returnTo) },
+            "onboarding",
+            900,
+          ),
+          this.cookieOptions(900_000),
+        );
+        response.redirect(302, "/onboarding/profile");
+      }
+    } catch {
+      response.redirect(302, "/login?oauthError=42");
+    }
   }
 }

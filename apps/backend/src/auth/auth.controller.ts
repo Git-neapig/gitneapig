@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Post, Query, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { AuthService, currentUser } from "./auth.service";
@@ -25,5 +25,17 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     this.auth.logout(response);
+  }
+  @Get("42") start(
+    @Query("returnTo") returnTo: unknown,
+    @Res() response: Response,
+  ) {
+    this.auth.oauthStart(returnTo, response);
+  }
+  @Get("42/callback") callback(
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    return this.auth.oauthCallback(request, response);
   }
 }

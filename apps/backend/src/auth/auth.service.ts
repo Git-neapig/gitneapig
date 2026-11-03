@@ -1,6 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { Prisma, type User } from "@prisma/client";
-import { calculateLevel, type CurrentUser, type Language, type PublicUserSummary } from "@gitneapig/shared";
+import {
+  calculateLevel,
+  type CurrentUser,
+  type Language,
+  type PublicUserSummary,
+} from "@gitneapig/shared";
 import { hash, verify, argon2id } from "argon2";
 import jwt from "jsonwebtoken";
 import { randomBytes, timingSafeEqual } from "node:crypto";
@@ -9,7 +14,15 @@ import { z } from "zod";
 import type { Configuration } from "../config";
 import { PrismaService } from "../database/prisma.service";
 import { ApiError } from "../common/errors";
-import { loginSchema, normalizeIdentity, safeReturnTo, signupSchema } from "../common/validation";
+import {
+  avatarPresetSchema,
+  loginSchema,
+  nicknameSchema,
+  normalizeIdentity,
+  safeReturnTo,
+  signupSchema,
+} from "../common/validation";
+import { AvatarStorage } from "../profile/avatar.storage";
 
 export function currentUser(user: User): CurrentUser {
   return {
@@ -46,8 +59,10 @@ export function publicUser(
 }
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService,
-    @Inject("CONFIG") private readonly config: Configuration
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject("CONFIG") private readonly config: Configuration,
+    private readonly avatars: AvatarStorage,
   ) {}
   private cookieOptions(maxAge?: number) {
     return {
@@ -292,6 +307,57 @@ export class AuthService {
       }
     } catch {
       response.redirect(302, "/login?oauthError=42");
+    }
+  }
+  async onboard(
+    request: Request,
+    response: Response,
+    body: unknown,
+    file?: Express.Multer.File,
+  ): Promise<void> {
+    const pending = this.verified(
+      (request.cookies as Record<string, unknown>).gitneapig_onboarding,
+      "onboarding",
+    );
+    const input = z
+      .object({
+        nickname: nicknameSchema,
+        avatarPresetKey: avatarPresetSchema.optional(),
+      })
+      .strict()
+      .parse(body);
+    if (file && input.avatarPresetKey)
+      throw new ApiError(
+        400,
+        "VALIDATION_ERROR",
+        "Choose one avatar source.",
+        "avatar",
+      );
+    if (typeof pending.sub !== "string" || !/^\d+$/.test(pending.sub))
+      throw new ApiError(401, "UNAUTHORIZED", "Restart 42 sign-in.");
+    let avatarPath: string | null = null;
+    try {
+      if (file) avatarPath = await this.avatars.save(file);
+      const user = await this.prisma.user.create({
+        data: {
+          oauth42Subject: pending.sub,
+          nickname: input.nickname,
+          normalizedNickname: normalizeIdentity(input.nickname),
+          avatarSource: avatarPath
+            ? "CUSTOM"
+            : input.avatarPresetKey
+              ? "PRESET"
+              : "DEFAULT",
+          avatarPresetKey: input.avatarPresetKey ?? null,
+          avatarPath,
+        },
+      });
+      response.clearCookie("gitneapig_onboarding", this.cookieOptions());
+      this.session(response, user);
+      response.redirect(303, safeReturnTo(pending.returnTo));
+    } catch (error) {
+      await this.avatars.remove(avatarPath);
+      this.identityError(error);
     }
   }
 }

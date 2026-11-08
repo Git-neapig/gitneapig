@@ -14,5 +14,56 @@ services:
       timeout: 3s
       retries: 20
     restart: unless-stopped
+  backend:
+    build:
+      context: .
+      target: backend
+    environment:
+      NODE_ENV: production
+      APP_ORIGIN: ${DOCKER_APP_ORIGIN:-https://localhost:8443}
+      APP_TIME_ZONE: Asia/Seoul
+      BACKEND_PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gitneapig}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-gitneapig}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRES_IN: 8h
+      API_KEY_HMAC_SECRET: ${API_KEY_HMAC_SECRET:?Set API_KEY_HMAC_SECRET in .env}
+      OAUTH_42_CLIENT_ID: ${OAUTH_42_CLIENT_ID:-}
+      OAUTH_42_CLIENT_SECRET: ${OAUTH_42_CLIENT_SECRET:-}
+      OAUTH_42_REDIRECT_URI: ${OAUTH_42_REDIRECT_URI:-https://localhost:8443/api/v1/auth/42/callback}
+      AVATAR_UPLOAD_DIR: /app/uploads/avatars
+      AVATAR_MAX_SIZE_MB: 2
+      PUBLIC_API_RATE_LIMIT_MAX: 60
+      PUBLIC_API_RATE_LIMIT_WINDOW_SECONDS: 60
+      ONLINE_STATUS_THRESHOLD_SECONDS: 120
+    volumes:
+      - avatar_data:/app/uploads/avatars
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+  frontend:
+    build:
+      context: .
+      target: frontend
+    environment:
+      APP_ORIGIN: ${DOCKER_APP_ORIGIN:-https://localhost:8443}
+      TLS_HOST: ${TLS_HOST:-localhost}
+    ports:
+      - '127.0.0.1:${HTTP_PORT:-8080}:80'
+      - '127.0.0.1:${HTTPS_PORT:-8443}:443'
+    volumes:
+      - tls_data:/etc/nginx/tls
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 volumes:
   postgres_data:
+  avatar_data:
+  tls_data:

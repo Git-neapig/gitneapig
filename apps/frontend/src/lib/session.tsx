@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { AuthResponse, CurrentUser, Language } from "@gitneapig/shared";
 import { api, ApiClientError } from "./api";
@@ -94,6 +102,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   async function logout() {
     await api("/auth/logout", { method: "POST" });
     setUser(null);
+    navigator.serviceWorker?.controller?.postMessage({ type: "PURGE_PRIVATE" });
     navigate("/");
   }
   async function setLanguage(language: Language) {

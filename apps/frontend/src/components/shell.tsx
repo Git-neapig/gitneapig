@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { ChevronDown, LockKeyhole, Menu, X, LogOut, WifiOff } from "lucide-react";
+import {
+  ChevronDown,
+  LockKeyhole,
+  Menu,
+  X,
+  LogOut,
+  WifiOff,
+} from "lucide-react";
 import type { Language } from "@gitneapig/shared";
 import { useLocale } from "../lib/i18n";
 import { useSession } from "../lib/session";
 import { Avatar, IconButton } from "./ui";
 import { Failure, Loading } from "./feedback";
+import { PwaControls } from "./pwa";
 export const accountLinks = [
   ["/profile", "profile"],
   ["/profile/edit", "settings"],
@@ -209,6 +217,7 @@ export function Shell() {
           </div>
         </div>
       </header>
+      <PwaControls />
       {!online ? (
         <div className="offline-banner" role="status">
           <WifiOff size={16} />

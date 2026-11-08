@@ -1,5 +1,7 @@
 # GitneaPig — ACCEPTANCE_CHECKLIST.md
 
+> 2026-09-10 승인 변경: [UI/UX 개정 검증 기준](UI_UX_REVISION_2026-09-10.md#revision-acceptance)을 함께 적용한다. 아래의 이전 흐름과 충돌하면 개정 기준이 우선하며, 미검증 항목은 완료로 표시하지 않는다.
+
 > 이 문서는 GitneaPig 구현 완료 여부를 검증하기 위한 최종 Acceptance Checklist다.
 >
 > 기준 문서:

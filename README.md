@@ -40,6 +40,8 @@ Backend development uses TypeScript compilation before Node execution so Nest de
 
 Register a 42 application and set `OAUTH_42_CLIENT_ID`, `OAUTH_42_CLIENT_SECRET` and `OAUTH_42_REDIRECT_URI` to the application's exact HTTPS callback. The default Docker callback is `https://localhost:8443/api/v1/auth/42/callback`.
 
+The team's 42 application is registered with exactly this callback and the `public` scope. The stack must therefore be served on port 8443 for 42 sign-in to work. The client ID and secret are shared privately with the members who run the stack; never commit them or post them in issues, pull requests or public channels.
+
 The implementation exchanges a real authorization code with `api.intra.42.fr`, verifies state, and identifies accounts only by the stable 42 subject. Email is never used to auto-link accounts. A new account is created only after a signed, short-lived onboarding context is completed. Real provider verification requires team-owned credentials; there is no demo login or fake OAuth provider in production.
 
 ## Features
@@ -156,11 +158,9 @@ E2E_BASE_URL=http://127.0.0.1:4173 E2E_PWA=1 \
 
 For the local self-signed Docker stack, use `E2E_ALLOW_SELF_SIGNED=1` only with a loopback hostname and `E2E_CA_CERT` pointing to its public certificate file. Chrome/Chromium service-worker tests pin that certificate's public key without modifying system trust. Member cleanup inside Docker additionally requires `E2E_DOCKER_PROJECT` and optionally `E2E_DOCKER_ENV_FILE`. The local certificate was separately verified using `curl --cacert`; local automated allowances are not evidence of public certificate trust.
 
-`node scripts/verify-deployment.mjs --project NAME --env-file PATH --certificate PATH` checks HTTPS/security/OpenAPI and intentionally recreates that local evaluation stack's backend/frontend containers to verify retained database/avatar data and replacement cleanup. Run it separately from browser tests, never against production. See the evidence document for complete invocations.
+`node scripts/verify-deployment.mjs --project NAME --env-file PATH --certificate PATH` checks HTTPS/security/OpenAPI and intentionally recreates that local evaluation stack's backend/frontend containers to verify retained database/avatar data and replacement cleanup. Run it separately from browser tests, never against production.
 
-See [implementation progress](docs/implementation/IMPLEMENTATION_PLAN.md) and [acceptance evidence](docs/implementation/ACCEPTANCE_EVIDENCE.md) for exact results, remaining gates and the evaluation walkthrough. Screenshots and traces are generated outside the repository under `/tmp` by default.
-
-The [2026-09-10 revision log](docs/implementation/UI_UX_REVISION.md) supersedes earlier flow/test counts for this UI/UX update. The [approved revision specification](docs/spec/UI_UX_REVISION_2026-09-10.md) and [Learn review](docs/implementation/LEARN_CONTENT_REVIEW.md) record the scope and approved goal changes. [42 setup](docs/implementation/OAUTH_42_SETUP.md) documents the deferred real-provider verification.
+Screenshots and traces are generated outside the repository under `/tmp` by default.
 
 ## Evaluation Modules
 
@@ -177,7 +177,7 @@ The approved score table lists **12 named modules totaling 16 planned points**. 
 | Multiple Languages | Minor / 1 | Korean, English and Japanese UI and domain content |
 | Additional Browsers | Minor / 1 | Separate Chrome, Chromium, Firefox and mobile projects; Edge verification still needs installation |
 | Standard User Management | Major / 2 | Auth, profile, persistent avatars, friends and presence |
-| 42 OAuth | Minor / 1 | Real provider integration, state and onboarding; live credentials still required |
+| 42 OAuth | Minor / 1 | Real provider integration, state and onboarding; 42 application registered, live sign-in check pending |
 | Gamification | Minor / 1 | Persistent XP, derived levels, streaks and achievements |
 | Custom Git Simulator | Major / 2 | Deterministic parser/state machine, snapshot deltas, ancestry, three-way conflicts, remote separation and scenario event runtime |
 
